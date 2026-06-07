@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>じゃんけんプロジェクト</title>
+  <style>
+    :root {
+      --primary: #e84393;
+      --accent: #ffd600;
+      --dark: #1a1a2e;
+      --bg: #f5f0ff;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #777;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    header .logo { font-size: 3rem; margin-bottom: 0.4rem; }
+
+    header h1 {
+      font-size: clamp(1.6rem, 7vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      opacity: 0.75;
+      font-size: 0.9rem;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    h2.section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 1.75rem 0 0.75rem;
+    }
+
+    .week-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.2rem 1.3rem;
+      margin-bottom: 0.9rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .week-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+
+    .week-card.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .week-card .badge {
+      min-width: 3rem;
+      height: 3rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .badge.w1 { background: linear-gradient(135deg, var(--primary), #7b2ff7); color: #fff; }
+    .badge.w2 { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; }
+    .badge.w3 { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; }
+    .badge.w4 { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+    .badge.w5 { background: linear-gradient(135deg, var(--dark), #4f46e5); color: #fff; }
+
+    .week-card .info { flex: 1; }
+
+    .week-card .week-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .week-card .title {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-top: 0.1rem;
+    }
+
+    .week-card .arrow {
+      font-size: 1.2rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .now-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--dark);
+      font-size: 0.68rem;
+      font-weight: 900;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">✊🖐✌</div>
+  <h1>じゃんけんプロジェクト</h1>
+  <p>じゃんけんを再解釈する5週間の冒険</p>
+</header>
+
+<main>
+
+  <h2 class="section-title">週ごとのゲーム</h2>
+
+  <a class="week-card" href="week1/index.html">
+    <div class="badge w1"><span>1週目</span></div>
+    <div class="info">
+      <div class="week-label">Week 1 <span class="now-badge">NOW</span></div>
+      <div class="title">じゃんけんポイポイ<br>どっち出すの？！</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="week-card" href="week2/online.html">
+    <div class="badge w2"><span>2週目</span></div>
+    <div class="info">
+      <div class="week-label">Week 2</div>
+      <div class="title">アルゴリズムじゃんけん<br>（通信ルーム版）</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="week-card disabled" href="#">
+    <div class="badge w3"><span>3週目</span></div>
+    <div class="info">
+      <div class="week-label">Week 3</div>
+      <div class="title">アルティメットじゃんけん</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="week-card disabled" href="#">
+    <div class="badge w4"><span>4週目</span></div>
+    <div class="info">
+      <div class="week-label">Week 4</div>
+      <div class="title">アイデアを持ち寄ろう</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <a class="week-card disabled" href="#">
+    <div class="badge w5"><span>5週目</span></div>
+    <div class="info">
+      <div class="week-label">Week 5</div>
+      <div class="title">オリジナルじゃんけんを作ろう</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+  <h2 class="section-title" style="margin-top:2rem;">ツール</h2>
+
+  <a class="week-card" href="tournament.html">
+    <div class="badge" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;"><span>🏆</span></div>
+    <div class="info">
+      <div class="week-label">Tool</div>
+      <div class="title">トーナメント表</div>
+    </div>
+    <span class="arrow">›</span>
+  </a>
+
+</main>
+
+<footer>
+  じゃんけんプロジェクト 2026
+</footer>
+
+</body>
+</html>

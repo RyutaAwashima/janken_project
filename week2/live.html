@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アルゴリズムじゃんけん - ライブ対戦</title>
+  <style>
+    :root {
+      --bg: #f3f0ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --a: #2563eb;
+      --b: #ef4444;
+      --accent: #7b2ff7;
+      --ok: #059669;
+      --warn: #b45309;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 0%, #ffffff 0%, var(--bg) 65%);
+      min-height: 100dvh;
+      padding-bottom: 4rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    .title {
+      font-size: clamp(1.2rem, 4vw, 1.7rem);
+      font-weight: 900;
+      margin: 0.5rem 0 0.25rem;
+    }
+    .subtitle { color: var(--muted); margin-bottom: 1rem; font-size: 0.9rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: 0.8rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+    .row > * { min-width: 0; }
+    .grow { flex: 1; }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0.65rem 0.95rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f3f4f6;
+      color: var(--text);
+    }
+    .btn.primary { background: var(--accent); color: white; }
+    .btn.a { background: var(--a); color: white; }
+    .btn.b { background: var(--b); color: white; }
+    .btn.outline { border: 2px solid var(--line); background: white; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    input, select {
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      padding: 0.58rem 0.7rem;
+      font-size: 0.92rem;
+      background: white;
+    }
+    .tabs { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.65rem;
+      border-radius: 10px;
+      background: #ece8ff;
+      color: #4b5563;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    .tab.active { background: var(--accent); color: white; }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+    }
+    .pill.a { background: var(--a); }
+    .pill.b { background: var(--b); }
+    .pill.g { background: #6b7280; }
+    .mini { font-size: 0.82rem; color: var(--muted); }
+    .warn {
+      border-left: 4px solid #f59e0b;
+      background: #fffbeb;
+      color: #92400e;
+      padding: 0.65rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 0.8rem;
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .algo-line {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.6rem;
+      margin-bottom: 0.45rem;
+    }
+    .algo-head { font-size: 0.83rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .score {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      background: #111827;
+      color: white;
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.8rem;
+    }
+    .score .val { font-size: 2rem; font-weight: 900; line-height: 1; }
+    .battle-row {
+      display: grid;
+      grid-template-columns: 50px 1fr 1fr 90px;
+      gap: 0.4rem;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.4rem;
+      background: white;
+    }
+    .battle-row .hand { font-size: 1.15rem; text-align: center; }
+    .battle-row .res { text-align: center; font-size: 0.8rem; font-weight: 700; }
+    .hidden { display: none !important; }
+    @media (max-width: 760px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .battle-row { grid-template-columns: 42px 1fr 1fr 70px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">ライブ対戦（複数端末）</h1>
+    <p class="subtitle">ホストがルーム作成 → 参加者はルームコードで参加 → A/B割当 → 入力完了後にバトル公開</p>
+
+    <div id="firebaseWarn" class="warn hidden">
+      Firebase の設定値が未設定です。<br />
+      <span class="mini">live.html 内の <code>FIREBASE_CONFIG</code> をあなたのプロジェクト値に置き換えてください。</span>
+    </div>
+
+    <div id="landing" class="card">
+      <div class="tabs">
+        <button class="tab active" id="tabHost">ホスト</button>
+        <button class="tab" id="tabJoin">参加者</button>
+      </div>
+
+      <div id="hostBox">
+        <div class="row">
+          <div class="grow"><input id="hostName" placeholder="ホスト名（例: 先生）" /></div>
+          <button class="btn primary" id="createRoomBtn">ルーム作成</button>
+        </div>
+      </div>
+
+      <div id="joinBox" class="hidden">
+        <div class="row">
+          <div class="grow"><input id="joinName" placeholder="参加者名" /></div>
+          <div style="width: 130px;"><input id="joinCode" placeholder="ルームコード" maxlength="6" /></div>
+          <button class="btn primary" id="joinRoomBtn">参加</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="roomCard" class="card hidden">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <div class="mini">ルームコード</div>
+          <div style="font-size:1.45rem; font-weight:900; letter-spacing:0.08em;" id="roomCodeView">------</div>
+        </div>
+        <div class="row">
+          <span id="rolePill" class="pill g">---</span>
+          <button class="btn outline" id="copyInviteBtn">招待文コピー</button>
+          <button class="btn" id="leaveBtn">退出</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hostPanel" class="hidden">
+      <div class="grid2">
+        <div class="card">
+          <h3 style="margin-bottom:0.6rem;">参加者と割り当て</h3>
+          <div id="participantsList" class="mini">まだ参加者がいません</div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:0.6rem;">提出状況</h3>
+          <div id="submissionState" class="mini">A/Bとも未提出</div>
+          <div style="height:0.7rem"></div>
+          <button class="btn primary" id="startBattleBtn" disabled>バトル開始</button>
+          <button class="btn" id="nextStepBtn" disabled style="margin-left:0.4rem;">次の手を公開</button>
+          <div style="height:0.7rem"></div>
+          <button class="btn" id="resetRoundBtn">このルームで再戦（提出クリア）</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="playerPanel" class="hidden">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom:0.5rem;">
+          <h3>アルゴリズム入力</h3>
+          <span id="myTeamPill" class="pill g">未割当</span>
+        </div>
+        <div id="cardCount" class="mini" style="margin-bottom:0.6rem;">残り: グー4 / チョキ4 / パー4</div>
+        <div id="algoEditor"></div>
+        <div class="row" style="margin-top:0.7rem;">
+          <button class="btn primary" id="submitAlgoBtn" disabled>この内容で提出</button>
+          <button class="btn" id="clearAlgoBtn">入力クリア</button>
+        </div>
+        <div id="algoErrors" class="mini" style="color:#b91c1c; margin-top:0.5rem;"></div>
+      </div>
+    </div>
+
+    <div id="battlePanel" class="hidden card">
+      <h3 style="margin-bottom:0.6rem;">バトル表示</h3>
+      <div class="score">
+        <div>
+          <div class="mini" style="color:#9ca3af;">TEAM A</div>
+          <div class="val" style="color:#60a5fa;" id="scoreA">0</div>
+        </div>
+        <div style="align-self:end; color:#9ca3af; font-weight:700;">vs</div>
+        <div style="text-align:right;">
+          <div class="mini" style="color:#9ca3af;">TEAM B</div>
+          <div class="val" style="color:#f87171;" id="scoreB">0</div>
+        </div>
+      </div>
+      <div id="battleRows"></div>
+      <div id="battleNote" class="mini">ホストが公開を進めます。</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      update,
+      remove,
+      onValue,
+      off,
+      serverTimestamp,
+    } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
+
+    // ここをあなたの Firebase プロジェクト情報に置き換えてください。
+    const FIREBASE_CONFIG = {
+      apiKey: 'REPLACE_ME',
+      authDomain: 'REPLACE_ME',
+      databaseURL: 'REPLACE_ME',
+      projectId: 'REPLACE_ME',
+      storageBucket: 'REPLACE_ME',
+      messagingSenderId: 'REPLACE_ME',
+      appId: 'REPLACE_ME',
+    };
+
+    const configReady = !Object.values(FIREBASE_CONFIG).some(v => String(v).includes('REPLACE_ME'));
+    const firebaseWarn = document.getElementById('firebaseWarn');
+    if (!configReady) firebaseWarn.classList.remove('hidden');
+
+    const EMOJI = { G: '✊', C: '✌', P: '🖐' };
+    const HANDS = ['G', 'C', 'P'];
+    const CONDS = ['cG', 'cC', 'cP', 'wW', 'wL', 'wD'];
+    const COND_NAME = {
+      cG: '後判定: 相手がグー',
+      cC: '後判定: 相手がチョキ',
+      cP: '後判定: 相手がパー',
+      wW: '前手番で勝ち',
+      wL: '前手番で負け',
+      wD: '前手番であいこ',
+    };
+    const POST = new Set(['cG', 'cC', 'cP']);
+    const ROUNDS = 10;
+    const MAX = 4;
+
+    let app = null;
+    let db = null;
+
+    if (configReady) {
+      app = initializeApp(FIREBASE_CONFIG);
+      db = getDatabase(app);
+    }
+
+    const state = {
+      mode: 'host',
+      roomCode: null,
+      role: null,
+      participantId: localStorage.getItem('jpLivePid') || crypto.randomUUID(),
+      myName: '',
+      myTeam: null,
+      roomData: null,
+      unsubscribeRoom: null,
+      myAlgo: Array.from({ length: ROUNDS }, (_, i) => i === 0
+        ? { type: 'S', hand: null, cond: null, then: null, els: null }
+        : { type: 'S', hand: null, cond: null, then: null, els: null }),
+    };
+    localStorage.setItem('jpLivePid', state.participantId);
+
+    const els = {
+      tabHost: document.getElementById('tabHost'),
+      tabJoin: document.getElementById('tabJoin'),
+      hostBox: document.getElementById('hostBox'),
+      joinBox: document.getElementById('joinBox'),
+      createRoomBtn: document.getElementById('createRoomBtn'),
+      joinRoomBtn: document.getElementById('joinRoomBtn'),
+      hostName: document.getElementById('hostName'),
+      joinName: document.getElementById('joinName'),
+      joinCode: document.getElementById('joinCode'),
+      roomCard: document.getElementById('roomCard'),
+      roomCodeView: document.getElementById('roomCodeView'),
+      rolePill: document.getElementById('rolePill'),
+      copyInviteBtn: document.getElementById('copyInviteBtn'),
+      leaveBtn: document.getElementById('leaveBtn'),
+      hostPanel: document.getElementById('hostPanel'),
+      participantsList: document.getElementById('participantsList'),
+      submissionState: document.getElementById('submissionState'),
+      startBattleBtn: document.getElementById('startBattleBtn'),
+      nextStepBtn: document.getElementById('nextStepBtn'),
+      resetRoundBtn: document.getElementById('resetRoundBtn'),
+      playerPanel: document.getElementById('playerPanel'),
+      myTeamPill: document.getElementById('myTeamPill'),
+      cardCount: document.getElementById('cardCount'),
+      algoEditor: document.getElementById('algoEditor'),
+      submitAlgoBtn: document.getElementById('submitAlgoBtn'),
+      clearAlgoBtn: document.getElementById('clearAlgoBtn'),
+      algoErrors: document.getElementById('algoErrors'),
+      battlePanel: document.getElementById('battlePanel'),
+      scoreA: document.getElementById('scoreA'),
+      scoreB: document.getElementById('scoreB'),
+      battleRows: document.getElementById('battleRows'),
+      battleNote: document.getElementById('battleNote'),
+    };
+
+    function setTab(mode) {
+      state.mode = mode;
+      els.tabHost.classList.toggle('active', mode === 'host');
+      els.tabJoin.classList.toggle('active', mode === 'join');
+      els.hostBox.classList.toggle('hidden', mode !== 'host');
+      els.joinBox.classList.toggle('hidden', mode !== 'join');
+    }
+
+    function randCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s = '';
+      for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+      return s;
+    }
+
+    function roomRef(code) { return ref(db, `jp-live-rooms/${code}`); }
+
+    async function createRoom() {
+      if (!db) return;
+      const name = els.hostName.value.trim() || 'Host';
+      let code = randCode();
+      for (let i = 0; i < 5; i++) {
+        const snap = await get(roomRef(code));
+        if (!snap.exists()) break;
+        code = randCode();
+      }
+      await set(roomRef(code), {
+        code,
+        status: 'setup',
+        host: { id: state.participantId, name, at: Date.now() },
+        participants: {},
+        submissions: {},
+        battle: null,
+        updatedAt: serverTimestamp(),
+      });
+      state.myName = name;
+      state.role = 'host';
+      connectRoom(code);
+    }
+
+    async function joinRoom() {
+      if (!db) return;
+      const code = els.joinCode.value.trim().toUpperCase();
+      const name = els.joinName.value.trim();
+      if (!code || !name) return;
+      const snap = await get(roomRef(code));
+      if (!snap.exists()) {
+        alert('ルームが見つかりません');
+        return;
+      }
+      await update(ref(db, `jp-live-rooms/${code}/participants/${state.participantId}`), {
+        id: state.participantId,
+        name,
+        team: null,
+        joinedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      state.myName = name;
+      state.role = 'player';
+      connectRoom(code);
+    }
+
+    function leaveRoom() {
+      if (!db || !state.roomCode) return;
+      const code = state.roomCode;
+      if (state.role === 'player') {
+        remove(ref(db, `jp-live-rooms/${code}/participants/${state.participantId}`));
+      }
+      if (state.unsubscribeRoom) off(roomRef(code), 'value', state.unsubscribeRoom);
+      state.roomCode = null;
+      state.role = null;
+      state.roomData = null;
+      els.roomCard.classList.add('hidden');
+      els.hostPanel.classList.add('hidden');
+      els.playerPanel.classList.add('hidden');
+      els.battlePanel.classList.add('hidden');
+    }
+
+    function connectRoom(code) {
+      state.roomCode = code;
+      els.roomCodeView.textContent = code;
+      els.roomCard.classList.remove('hidden');
+      renderRole();
+
+      if (state.unsubscribeRoom) off(roomRef(code), 'value', state.unsubscribeRoom);
+      const cb = (snap) => {
+        state.roomData = snap.val();
+        if (!state.roomData) return;
+        renderAll();
+      };
+      state.unsubscribeRoom = cb;
+      onValue(roomRef(code), cb);
+    }
+
+    function renderRole() {
+      const roleTxt = state.role === 'host' ? 'ホスト' : '参加者';
+      els.rolePill.textContent = roleTxt;
+      els.rolePill.className = `pill ${state.role === 'host' ? 'a' : 'b'}`;
+    }
+
+    function teamBadge(team) {
+      if (team === 'A') return '<span class="pill a">TEAM A</span>';
+      if (team === 'B') return '<span class="pill b">TEAM B</span>';
+      return '<span class="pill g">未割当</span>';
+    }
+
+    async function setParticipantTeam(pid, team) {
+      await update(ref(db, `jp-live-rooms/${state.roomCode}/participants/${pid}`), {
+        team,
+        updatedAt: Date.now(),
+      });
+    }
+
+    function countCards(algo) {
+      const c = { G: 0, C: 0, P: 0 };
+      for (const s of algo) {
+        if (s.type === 'S') {
+          if (s.hand) c[s.hand]++;
+        } else {
+          if (s.then) c[s.then]++;
+          if (s.els) c[s.els]++;
+        }
+      }
+      return c;
+    }
+
+    function validateAlgo(algo) {
+      const errs = [];
+      const c = countCards(algo);
+      for (const h of HANDS) {
+        if (c[h] > MAX) errs.push(`${EMOJI[h]} を使いすぎ (${c[h]}/${MAX})`);
+      }
+      for (let i = 0; i < ROUNDS; i++) {
+        const s = algo[i];
+        if (s.type === 'S') {
+          if (!s.hand) errs.push(`${i + 1}手目: 手が未選択`);
+        } else {
+          if (!s.cond) errs.push(`${i + 1}手目: 条件が未選択`);
+          if (!s.then || !s.els) errs.push(`${i + 1}手目: then/elseが未選択`);
+        }
+      }
+      return errs;
+    }
+
+    function editorSelect(options, value, onChange, disabled = false) {
+      const s = document.createElement('select');
+      s.disabled = disabled;
+      for (const op of options) {
+        const o = document.createElement('option');
+        o.value = op.value;
+        o.textContent = op.label;
+        if (op.value === value) o.selected = true;
+        s.appendChild(o);
+      }
+      s.onchange = () => onChange(s.value || null);
+      return s;
+    }
+
+    function renderEditor() {
+      const rd = state.roomData || {};
+      const battleStarted = rd.battle && rd.battle.started;
+      const myP = (rd.participants || {})[state.participantId];
+      const myTeam = myP ? myP.team : null;
+      state.myTeam = myTeam;
+
+      els.myTeamPill.innerHTML = myTeam ? teamBadge(myTeam) : '<span class="pill g">未割当</span>';
+
+      const errs = validateAlgo(state.myAlgo);
+      const c = countCards(state.myAlgo);
+      els.cardCount.textContent = `残り: グー${Math.max(0, MAX - c.G)} / チョキ${Math.max(0, MAX - c.C)} / パー${Math.max(0, MAX - c.P)}`;
+      els.algoErrors.innerHTML = errs.length ? `入力エラー: ${errs.slice(0, 3).join(' / ')}` : '';
+
+      const canSubmit = !!myTeam && !battleStarted && errs.length === 0;
+      els.submitAlgoBtn.disabled = !canSubmit;
+
+      const root = els.algoEditor;
+      root.innerHTML = '';
+
+      for (let i = 0; i < ROUNDS; i++) {
+        const s = state.myAlgo[i];
+        const line = document.createElement('div');
+        line.className = 'algo-line';
+
+        const head = document.createElement('div');
+        head.className = 'algo-head';
+        head.textContent = `${i + 1} 手目`;
+        line.appendChild(head);
+
+        const row1 = document.createElement('div');
+        row1.className = 'row';
+
+        const typeSel = editorSelect(
+          [{ value: 'S', label: '単体' }, { value: 'I', label: '条件分岐' }],
+          i === 0 ? 'S' : s.type,
+          (v) => {
+            if (i === 0) return;
+            s.type = v;
+            if (v === 'S') {
+              s.cond = null; s.then = null; s.els = null;
+            } else {
+              s.hand = null;
+            }
+            renderEditor();
+          },
+          i === 0 || battleStarted
+        );
+        row1.appendChild(typeSel);
+
+        if (s.type === 'S' || i === 0) {
+          if (i === 0) s.type = 'S';
+          row1.appendChild(editorSelect(
+            [{ value: '', label: '手を選ぶ' }, { value: 'G', label: '✊ グー' }, { value: 'C', label: '✌ チョキ' }, { value: 'P', label: '🖐 パー' }],
+            s.hand || '',
+            (v) => { s.hand = v || null; renderEditor(); },
+            battleStarted
+          ));
+        } else {
+          row1.appendChild(editorSelect(
+            [{ value: '', label: '条件を選ぶ' }, ...CONDS.map(c => ({ value: c, label: COND_NAME[c] }))],
+            s.cond || '',
+            (v) => { s.cond = v || null; renderEditor(); },
+            battleStarted
+          ));
+        }
+        line.appendChild(row1);
+
+        if (s.type === 'I' && i !== 0) {
+          const row2 = document.createElement('div');
+          row2.className = 'row';
+          row2.style.marginTop = '0.45rem';
+          row2.appendChild(editorSelect(
+            [{ value: '', label: 'then（ならば）' }, { value: 'G', label: 'then: ✊ グー' }, { value: 'C', label: 'then: ✌ チョキ' }, { value: 'P', label: 'then: 🖐 パー' }],
+            s.then || '',
+            (v) => { s.then = v || null; renderEditor(); },
+            battleStarted
+          ));
+          row2.appendChild(editorSelect(
+            [{ value: '', label: 'else（でなければ）' }, { value: 'G', label: 'else: ✊ グー' }, { value: 'C', label: 'else: ✌ チョキ' }, { value: 'P', label: 'else: 🖐 パー' }],
+            s.els || '',
+            (v) => { s.els = v || null; renderEditor(); },
+            battleStarted
+          ));
+          line.appendChild(row2);
+        }
+
+        root.appendChild(line);
+      }
+    }
+
+    function beats(a, b) {
+      return (a === 'G' && b === 'C') || (a === 'C' && b === 'P') || (a === 'P' && b === 'G');
+    }
+
+    function evalCond(cond, prevRes, oppNow) {
+      if (cond === 'cG') return oppNow === 'G';
+      if (cond === 'cC') return oppNow === 'C';
+      if (cond === 'cP') return oppNow === 'P';
+      if (cond === 'wW') return prevRes === 'W';
+      if (cond === 'wL') return prevRes === 'L';
+      if (cond === 'wD') return prevRes === 'D';
+      return false;
+    }
+
+    function resolve(step, roundIdx, prevRes, oppNow) {
+      if (step.type === 'S') return step.hand;
+      if (roundIdx === 0) return step.els;
+      return evalCond(step.cond, prevRes, oppNow) ? step.then : step.els;
+    }
+
+    function runBattle(aAlgo, bAlgo) {
+      const rows = [];
+      let pA = null;
+      let pB = null;
+      let scoreA = 0;
+      let scoreB = 0;
+
+      for (let i = 0; i < ROUNDS; i++) {
+        const sa = aAlgo[i];
+        const sb = bAlgo[i];
+        const pa = sa.type === 'I' && POST.has(sa.cond);
+        const pb = sb.type === 'I' && POST.has(sb.cond);
+
+        let hA, hB;
+        let loop = false;
+        if (pa && pb) {
+          loop = true;
+          hA = resolve(sa, i, pA, null);
+          hB = resolve(sb, i, pB, null);
+        } else if (pa) {
+          hB = resolve(sb, i, pB, null);
+          hA = resolve(sa, i, pA, hB);
+        } else if (pb) {
+          hA = resolve(sa, i, pA, null);
+          hB = resolve(sb, i, pB, hA);
+        } else {
+          hA = resolve(sa, i, pA, null);
+          hB = resolve(sb, i, pB, null);
+        }
+
+        let out;
+        if (hA === hB) out = 'D';
+        else if (beats(hA, hB)) out = 'A';
+        else out = 'B';
+
+        const ptA = out === 'A' ? 2 : out === 'D' ? 1 : 0;
+        const ptB = out === 'B' ? 2 : out === 'D' ? 1 : 0;
+        scoreA += ptA;
+        scoreB += ptB;
+
+        rows.push({ i, hA, hB, out, ptA, ptB, scoreA, scoreB, loop, pa, pb });
+
+        pA = out === 'A' ? 'W' : out === 'B' ? 'L' : 'D';
+        pB = out === 'B' ? 'W' : out === 'A' ? 'L' : 'D';
+      }
+      return { rows, scoreA, scoreB };
+    }
+
+    async function submitAlgo() {
+      if (!state.myTeam) return;
+      const errs = validateAlgo(state.myAlgo);
+      if (errs.length) return;
+      await set(ref(db, `jp-live-rooms/${state.roomCode}/submissions/${state.myTeam}`), {
+        by: state.participantId,
+        name: state.myName,
+        algo: state.myAlgo,
+        at: Date.now(),
+      });
+      await update(ref(db, `jp-live-rooms/${state.roomCode}`), {
+        status: 'ready-check',
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    async function startBattle() {
+      const sub = state.roomData.submissions || {};
+      if (!sub.A || !sub.B) return;
+      const result = runBattle(sub.A.algo, sub.B.algo);
+      await set(ref(db, `jp-live-rooms/${state.roomCode}/battle`), {
+        started: true,
+        step: 0,
+        rows: result.rows,
+        scoreA: result.scoreA,
+        scoreB: result.scoreB,
+        at: Date.now(),
+      });
+      await update(ref(db, `jp-live-rooms/${state.roomCode}`), {
+        status: 'battle',
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    async function nextStep() {
+      const b = state.roomData.battle;
+      if (!b || !b.started) return;
+      const next = Math.min((b.step || 0) + 1, ROUNDS);
+      await update(ref(db, `jp-live-rooms/${state.roomCode}/battle`), { step: next });
+      if (next >= ROUNDS) {
+        await update(ref(db, `jp-live-rooms/${state.roomCode}`), { status: 'done' });
+      }
+    }
+
+    async function resetRound() {
+      if (!confirm('提出とバトル結果をクリアして再戦しますか？')) return;
+      await set(ref(db, `jp-live-rooms/${state.roomCode}/submissions`), {});
+      await set(ref(db, `jp-live-rooms/${state.roomCode}/battle`), null);
+      await update(ref(db, `jp-live-rooms/${state.roomCode}`), { status: 'setup' });
+    }
+
+    function renderParticipants() {
+      const p = state.roomData.participants || {};
+      const list = Object.values(p);
+      if (!list.length) {
+        els.participantsList.innerHTML = '<span class="mini">まだ参加者がいません</span>';
+        return;
+      }
+      els.participantsList.innerHTML = list.map(it => {
+        return `
+          <div class="row" style="justify-content:space-between; border-bottom:1px solid #eee; padding:0.35rem 0;">
+            <div><strong>${it.name}</strong> <span class="mini">${it.id === state.roomData.host.id ? '(host)' : ''}</span></div>
+            <div class="row">
+              ${teamBadge(it.team || null)}
+              <button class="btn a" data-assign="A" data-id="${it.id}" style="padding:0.35rem 0.55rem;">A</button>
+              <button class="btn b" data-assign="B" data-id="${it.id}" style="padding:0.35rem 0.55rem;">B</button>
+              <button class="btn" data-assign="" data-id="${it.id}" style="padding:0.35rem 0.55rem;">解除</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      els.participantsList.querySelectorAll('button[data-assign]').forEach(btn => {
+        btn.onclick = () => setParticipantTeam(btn.dataset.id, btn.dataset.assign || null);
+      });
+    }
+
+    function renderSubmissionState() {
+      const s = state.roomData.submissions || {};
+      const a = !!s.A;
+      const b = !!s.B;
+      els.submissionState.innerHTML = `${a ? '✅' : '⬜'} TEAM A 提出 / ${b ? '✅' : '⬜'} TEAM B 提出`;
+      els.startBattleBtn.disabled = !(a && b);
+
+      const battle = state.roomData.battle;
+      els.nextStepBtn.disabled = !(battle && battle.started && (battle.step || 0) < ROUNDS);
+    }
+
+    function renderBattle() {
+      const b = state.roomData.battle;
+      if (!b || !b.started) {
+        els.battlePanel.classList.add('hidden');
+        return;
+      }
+      els.battlePanel.classList.remove('hidden');
+      const step = b.step || 0;
+      const rows = b.rows || [];
+      const show = rows.slice(0, step);
+      const last = show[show.length - 1];
+
+      els.scoreA.textContent = last ? last.scoreA : 0;
+      els.scoreB.textContent = last ? last.scoreB : 0;
+
+      els.battleRows.innerHTML = show.map(r => {
+        const res = r.out === 'A' ? 'A勝ち' : r.out === 'B' ? 'B勝ち' : 'あいこ';
+        const tag = r.loop ? ' / ループ→else' : (r.pa || r.pb) ? ' / 後判定発動' : '';
+        return `
+          <div class="battle-row">
+            <div class="mini">${r.i + 1}手目</div>
+            <div class="hand">${EMOJI[r.hA]}</div>
+            <div class="hand">${EMOJI[r.hB]}</div>
+            <div class="res">${res}${tag}</div>
+          </div>`;
+      }).join('');
+
+      if (step >= ROUNDS) {
+        const fa = b.scoreA;
+        const fb = b.scoreB;
+        els.battleNote.textContent = fa === fb ? `最終結果: 引き分け (${fa}-${fb})` : (fa > fb ? `最終結果: TEAM A 勝利 (${fa}-${fb})` : `最終結果: TEAM B 勝利 (${fa}-${fb})`);
+      } else {
+        els.battleNote.textContent = `公開済み: ${step} / ${ROUNDS} 手`;
+      }
+    }
+
+    function renderAll() {
+      if (!state.roomData) return;
+      const isHost = state.role === 'host';
+      els.hostPanel.classList.toggle('hidden', !isHost);
+      els.playerPanel.classList.toggle('hidden', isHost);
+
+      if (isHost) {
+        renderParticipants();
+        renderSubmissionState();
+      } else {
+        renderEditor();
+      }
+      renderBattle();
+    }
+
+    // Events
+    els.tabHost.onclick = () => setTab('host');
+    els.tabJoin.onclick = () => setTab('join');
+    els.createRoomBtn.onclick = createRoom;
+    els.joinRoomBtn.onclick = joinRoom;
+    els.leaveBtn.onclick = leaveRoom;
+
+    els.copyInviteBtn.onclick = async () => {
+      if (!state.roomCode) return;
+      const txt = `アルゴリズムじゃんけん参加\nルームコード: ${state.roomCode}\n${location.href.split('#')[0]}`;
+      try {
+        await navigator.clipboard.writeText(txt);
+        alert('招待文をコピーしました');
+      } catch {
+        alert('コピーに失敗しました');
+      }
+    };
+
+    els.submitAlgoBtn.onclick = submitAlgo;
+    els.clearAlgoBtn.onclick = () => {
+      state.myAlgo = Array.from({ length: ROUNDS }, () => ({ type: 'S', hand: null, cond: null, then: null, els: null }));
+      renderEditor();
+    };
+
+    els.startBattleBtn.onclick = startBattle;
+    els.nextStepBtn.onclick = nextStep;
+    els.resetRoundBtn.onclick = resetRound;
+
+    // restore quick join from URL hash: #room=XXXXXX&role=join
+    const hash = new URLSearchParams(location.hash.replace('#', ''));
+    if (hash.get('role') === 'join') setTab('join');
+  </script>
+</body>
+</html>

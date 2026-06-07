@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>トーナメント</title>
+  <style>
+    :root {
+      --primary: #7b2ff7;
+      --accent:  #ffd600;
+      --success: #10b981;
+      --danger:  #ef4444;
+      --dark:    #1a1a2e;
+      --bg:      #f5f0ff;
+      --card:    #ffffff;
+      --text:    #222;
+      --muted:   #888;
+      --border:  #e5e7eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+    }
+
+    /* ---- Screens ---- */
+    .screen { display: none; }
+    .screen.active { display: block; }
+    #screen-result.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+    }
+
+    /* ---- App Header ---- */
+    .app-header {
+      background: linear-gradient(135deg, var(--dark) 0%, #2d1b69 100%);
+      color: #fff;
+      padding: 1.1rem 1.25rem 0.9rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .app-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-header h1 { font-size: 1.2rem; font-weight: 900; }
+
+    .header-back-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    /* ---- Round progress dots ---- */
+    .round-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.65rem;
+    }
+
+    .round-dot {
+      height: 0.35rem;
+      border-radius: 999px;
+      transition: all 0.3s;
+      flex: 1;
+    }
+
+    .round-dot.done    { background: rgba(255,255,255,0.4); }
+    .round-dot.current { background: var(--accent); flex: 2; }
+    .round-dot.future  { background: rgba(255,255,255,0.15); }
+
+    /* ---- Content ---- */
+    .content {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 5rem;
+    }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+      padding: 0.7rem 1.2rem;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:active    { transform: scale(0.97); }
+    .btn:disabled  { opacity: 0.38; cursor: not-allowed; transform: none !important; }
+    .btn-primary   { background: var(--primary); color: #fff; }
+    .btn-accent    { background: var(--accent); color: var(--dark); }
+    .btn-ghost     { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn-outline   { background: transparent; border: 2px solid var(--border); color: var(--text); }
+    .btn-block     { width: 100%; }
+
+    /* ---- Setup: Input row ---- */
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 0.65rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.7rem 0.95rem;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus { border-color: var(--primary); }
+
+    /* ---- Player list ---- */
+    .player-count {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: right;
+      margin-bottom: 0.6rem;
+    }
+
+    .player-list { margin-bottom: 1.25rem; }
+
+    .player-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.65rem 0.9rem;
+      margin-bottom: 0.45rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .player-seed {
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .player-name { flex: 1; font-weight: 600; font-size: 1rem; }
+
+    .remove-btn {
+      width: 1.8rem;
+      height: 1.8rem;
+      border: none;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: var(--danger);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    /* ---- Setup actions ---- */
+    .setup-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .setup-actions .btn-accent { flex: 1; min-width: 180px; }
+
+    /* ---- Round section ---- */
+    .round-section { margin-bottom: 1.5rem; }
+
+    .round-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .round-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ---- Match card ---- */
+    .match-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border: 2px solid transparent;
+    }
+
+    .match-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 4px 20px rgba(123,47,247,0.2);
+    }
+
+    .match-card.done { opacity: 0.72; }
+
+    /* ---- Match player buttons ---- */
+    .match-player-btn {
+      width: 100%;
+      padding: 1.1rem 1.25rem;
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .match-card.active .match-player-btn:not(:disabled):hover { background: #f9f5ff; }
+    .match-card.active .match-player-btn:not(:disabled):active { background: #ede9ff; }
+
+    .match-player-btn:disabled { cursor: default; }
+
+    .match-player-btn.winner {
+      background: #f0fdf4;
+      color: var(--success);
+    }
+
+    .match-player-btn.loser {
+      background: #fafafa;
+      color: #bbb;
+      text-decoration: line-through;
+    }
+
+    .match-player-btn .icon { font-size: 1.2rem; flex-shrink: 0; }
+
+    /* ---- Match divider ---- */
+    .match-divider {
+      padding: 0.18rem 0;
+      background: var(--border);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .match-card.active .match-divider {
+      background: #ede9ff;
+      color: var(--primary);
+    }
+
+    /* ---- BYE card ---- */
+    .bye-card {
+      background: #f9f9f9;
+      border-radius: 14px;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ---- Result screen ---- */
+    #screen-result {
+      background: linear-gradient(135deg, var(--dark), #2d1b69);
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .trophy-icon {
+      font-size: 5rem;
+      animation: bounce 0.7s ease-in-out infinite alternate;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-12px); }
+    }
+
+    .result-label {
+      font-size: 1rem;
+      letter-spacing: 0.25em;
+      opacity: 0.65;
+      margin-bottom: 0.5rem;
+    }
+
+    .winner-name {
+      font-size: clamp(2.2rem, 10vw, 3.5rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--accent), #ff6eb4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 2.5rem;
+      line-height: 1.2;
+      word-break: break-all;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 300px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ====================================================
+     SETUP SCREEN
+===================================================== -->
+<div id="screen-setup" class="screen active">
+  <div class="app-header">
+    <div class="app-header-top">
+      <h1>🏆 トーナメント</h1>
+    </div>
+  </div>
+  <div class="content">
+    <div class="input-row">
+      <input type="text" id="player-input" placeholder="名前を入力..." maxlength="20" autocomplete="off" />
+      <button class="btn btn-primary" id="add-btn">追加</button>
+    </div>
+    <div class="player-count" id="player-count">0 人</div>
+    <div class="player-list" id="player-list"></div>
+    <div class="setup-actions">
+      <button class="btn btn-outline" id="shuffle-btn">🔀 シャッフル</button>
+      <button class="btn btn-accent" id="start-btn" disabled>トーナメント開始 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================
+     TOURNAMENT SCREEN
+===================================================== -->
+<div id="screen-tournament" class="screen">
+  <div class="app-header">
+    <div class="app-header-top">
+      <h1>🏆 トーナメント</h1>
+      <button class="header-back-btn" id="back-btn">← 設定に戻る</button>
+    </div>
+    <div class="round-progress" id="round-progress"></div>
+  </div>
+  <div class="content">
+    <div id="bracket"></div>
+  </div>
+</div>
+
+<!-- ====================================================
+     RESULT SCREEN
+===================================================== -->
+<div id="screen-result" class="screen">
+  <div class="trophy-icon">🏆</div>
+  <div class="result-label">優 勝</div>
+  <div class="winner-name" id="winner-name"></div>
+  <div class="result-actions">
+    <button class="btn btn-accent btn-block" id="replay-btn">同じメンバーでもう一度</button>
+    <button class="btn btn-ghost btn-block" id="full-reset-btn">最初からやり直す</button>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // Utilities
+  // ============================================================
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(el => {
+      el.classList.toggle('active', el.id === 'screen-' + name);
+    });
+  }
+
+  // ============================================================
+  // State
+  // ============================================================
+  const STORAGE_KEY = 'janken-tournament-v1';
+
+  let state = {
+    players: [],
+    rounds: [],       // array of rounds; each round = array of matches
+    currentRound: 0,
+    done: false,
+    winner: null,
+  };
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (_) { /* ignore */ }
+  }
+
+  // ============================================================
+  // Setup
+  // ============================================================
+  function addPlayer() {
+    const input = document.getElementById('player-input');
+    const name = input.value.trim();
+    if (!name) return;
+    state.players.push(name);
+    input.value = '';
+    input.focus();
+    renderSetup();
+    save();
+  }
+
+  function removePlayer(idx) {
+    state.players.splice(idx, 1);
+    renderSetup();
+    save();
+  }
+
+  function shufflePlayers() {
+    const a = state.players;
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    renderSetup();
+  }
+
+  function renderSetup() {
+    const n = state.players.length;
+    document.getElementById('player-count').textContent = n + ' 人';
+    document.getElementById('start-btn').disabled = n < 2;
+
+    document.getElementById('player-list').innerHTML = state.players.map((p, i) => `
+      <div class="player-item">
+        <div class="player-seed">${i + 1}</div>
+        <div class="player-name">${esc(p)}</div>
+        <button class="remove-btn" data-idx="${i}" aria-label="削除">×</button>
+      </div>
+    `).join('');
+  }
+
+  // ============================================================
+  // Tournament logic
+  // ============================================================
+  function nextPow2(n) { let p = 1; while (p < n) p *= 2; return p; }
+
+  function startTournament() {
+    if (state.players.length < 2) return;
+
+    const size = nextPow2(state.players.length);
+    const padded = [...state.players];
+    while (padded.length < size) padded.push(null); // null = BYE
+
+    const round0 = [];
+    for (let i = 0; i < padded.length; i += 2) {
+      // BYE vs BYE は意味がないのでスキップ
+      if (padded[i] === null && padded[i + 1] === null) continue;
+      round0.push({ id: 'r0m' + (i / 2), p1: padded[i], p2: padded[i + 1], winner: null });
+    }
+
+    state.rounds = [round0];
+    state.currentRound = 0;
+    state.done = false;
+    state.winner = null;
+
+    resolveByes(0);
+    advanceIfComplete();
+
+    showScreen('tournament');
+    renderTournament();
+    save();
+  }
+
+  function resolveByes(ri) {
+    state.rounds[ri].forEach(m => {
+      if (m.winner !== null) return;
+      if (m.p1 === null) m.winner = m.p2;
+      if (m.p2 === null) m.winner = m.p1;
+    });
+  }
+
+  function selectWinner(matchId, side) {
+    const round = state.rounds[state.currentRound];
+    const match = round.find(m => m.id === matchId);
+    if (!match || match.winner !== null) return;
+
+    match.winner = match[side]; // match.p1 or match.p2
+    advanceIfComplete();
+    save();
+    renderTournament();
+  }
+
+  function advanceIfComplete() {
+    const round = state.rounds[state.currentRound];
+    if (!round.every(m => m.winner !== null)) return;
+
+    const winners = round.map(m => m.winner);
+
+    if (winners.length === 1) {
+      state.done = true;
+      state.winner = winners[0];
+      document.getElementById('winner-name').textContent = winners[0];
+      setTimeout(() => showScreen('result'), 500);
+      return;
+    }
+
+    const nextRound = [];
+    for (let i = 0; i < winners.length; i += 2) {
+      nextRound.push({
+        id: 'r' + (state.currentRound + 1) + 'm' + (i / 2),
+        p1: winners[i],
+        p2: winners[i + 1] ?? null,
+        winner: null,
+      });
+    }
+    state.rounds.push(nextRound);
+    state.currentRound++;
+    resolveByes(state.currentRound);
+    advanceIfComplete(); // cascade (e.g. multiple BYEs)
+  }
+
+  // ============================================================
+  // Rendering
+  // ============================================================
+  function roundLabel(ri) {
+    const n = state.rounds[ri].length;
+    if (n === 1) return '決勝';
+    if (n === 2) return '準決勝';
+    if (n === 4) return '準々決勝';
+    return (ri + 1) + '回戦';
+  }
+
+  function renderTournament() {
+    // Progress dots
+    const dots = state.rounds.map((_, ri) => {
+      let cls = ri < state.currentRound ? 'done' : ri === state.currentRound ? 'current' : 'future';
+      return '<div class="round-dot ' + cls + '"></div>';
+    }).join('');
+    document.getElementById('round-progress').innerHTML = dots;
+
+    // Bracket
+    const html = state.rounds.map((round, ri) => {
+      const isCurrent = ri === state.currentRound;
+
+      const matchesHtml = round.map(match => {
+        // BYE (auto-resolved)
+        if (match.p1 === null || match.p2 === null) {
+          return '<div class="bye-card">🎫 <strong>' + esc(match.winner) + '</strong>（不戦勝）</div>';
+        }
+
+        const done  = match.winner !== null;
+        const p1win = match.winner === match.p1;
+        const p2win = match.winner === match.p2;
+        const active = isCurrent && !done;
+
+        return `
+          <div class="match-card ${active ? 'active' : ''} ${done ? 'done' : ''}">
+            <button class="match-player-btn ${p1win ? 'winner' : done ? 'loser' : ''}"
+              data-match-id="${match.id}" data-side="p1"
+              ${active ? '' : 'disabled'}>
+              <span>${esc(match.p1)}</span>
+              <span class="icon">${p1win ? '🏆' : active ? '▶' : ''}</span>
+            </button>
+            <div class="match-divider">VS</div>
+            <button class="match-player-btn ${p2win ? 'winner' : done ? 'loser' : ''}"
+              data-match-id="${match.id}" data-side="p2"
+              ${active ? '' : 'disabled'}>
+              <span>${esc(match.p2)}</span>
+              <span class="icon">${p2win ? '🏆' : active ? '▶' : ''}</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="round-section">
+          <div class="round-title">${roundLabel(ri)}</div>
+          ${matchesHtml}
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('bracket').innerHTML = html;
+  }
+
+  // ============================================================
+  // Reset helpers
+  // ============================================================
+  function resetToSetup() {
+    // Keep players, clear tournament
+    state.rounds = [];
+    state.currentRound = 0;
+    state.done = false;
+    state.winner = null;
+    save();
+    renderSetup();
+    showScreen('setup');
+  }
+
+  function fullReset() {
+    state = { players: [], rounds: [], currentRound: 0, done: false, winner: null };
+    localStorage.removeItem(STORAGE_KEY);
+    renderSetup();
+    showScreen('setup');
+  }
+
+  // ============================================================
+  // Event listeners
+  // ============================================================
+  document.getElementById('add-btn').addEventListener('click', addPlayer);
+
+  document.getElementById('player-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addPlayer();
+  });
+
+  document.getElementById('player-list').addEventListener('click', e => {
+    const btn = e.target.closest('.remove-btn');
+    if (btn) removePlayer(Number(btn.dataset.idx));
+  });
+
+  document.getElementById('shuffle-btn').addEventListener('click', shufflePlayers);
+  document.getElementById('start-btn').addEventListener('click', startTournament);
+
+  document.getElementById('back-btn').addEventListener('click', () => {
+    if (state.done || confirm('進行中のトーナメントを中断して戻りますか？')) {
+      resetToSetup();
+    }
+  });
+
+  // Match button clicks (event delegation)
+  document.getElementById('bracket').addEventListener('click', e => {
+    const btn = e.target.closest('[data-match-id][data-side]');
+    if (!btn || btn.disabled) return;
+    selectWinner(btn.dataset.matchId, btn.dataset.side);
+  });
+
+  document.getElementById('replay-btn').addEventListener('click', resetToSetup);
+  document.getElementById('full-reset-btn').addEventListener('click', fullReset);
+
+  // ============================================================
+  // Init
+  // ============================================================
+  load();
+  renderSetup();
+
+  if (state.done && state.winner) {
+    document.getElementById('winner-name').textContent = state.winner;
+    showScreen('result');
+  } else if (state.rounds.length > 0) {
+    renderTournament();
+    showScreen('tournament');
+  }
+</script>
+
+</body>
+</html>

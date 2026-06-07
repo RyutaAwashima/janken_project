@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アルゴリズムじゃんけん | 通信ルーム</title>
+  <style>
+    :root {
+      --bg: #f4f2ff;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #6b7280;
+      --line: #d8dbe3;
+      --pri: #4f46e5;
+      --ok: #16a34a;
+      --warn: #b45309;
+      --bad: #dc2626;
+      --a: #2563eb;
+      --b: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: radial-gradient(circle at top right, #efe9ff, var(--bg));
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: 3rem;
+    }
+
+    header {
+      background: linear-gradient(135deg, #191b3a, #302062);
+      color: #fff;
+      padding: 0.85rem 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    header a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      font-weight: 900;
+      flex: 1;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.9rem;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+
+    .title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 0.65rem;
+      color: #202a44;
+    }
+
+    .row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .col {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    input, select {
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      background: #e9e7ff;
+      color: #1f1f3a;
+    }
+
+    button.primary { background: var(--pri); color: #fff; }
+    button.good { background: #dcfce7; color: #166534; }
+    button.warn { background: #fef3c7; color: #92400e; }
+    button.bad { background: #fee2e2; color: #991b1b; }
+    button:disabled { opacity: 0.42; cursor: not-allowed; }
+
+    .hidden { display: none !important; }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      padding: 0.12rem 0.55rem;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .room-code {
+      font-size: 1.65rem;
+      letter-spacing: 0.12em;
+      font-weight: 900;
+      margin: 0.35rem 0;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+
+    @media (min-width: 920px) {
+      .split { grid-template-columns: 1fr 1fr; }
+    }
+
+    .team-box {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 0.6rem;
+    }
+
+    .team-box.a { border-color: #bfdbfe; background: #eff6ff; }
+    .team-box.b { border-color: #fecaca; background: #fff1f2; }
+
+    .team-h {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-weight: 800;
+    }
+
+    .small { font-size: 0.78rem; color: var(--muted); }
+
+    .join-list {
+      display: grid;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .join-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 0.4rem 0.5rem;
+      background: #fff;
+    }
+
+    .join-item .name { flex: 1; font-weight: 700; }
+
+    .editor-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .counter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+    }
+
+    .counter span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.12rem 0.5rem;
+      background: #fff;
+    }
+
+    .counter span.over { color: var(--bad); border-color: #fca5a5; background: #fff1f2; }
+
+    table.algo {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .algo th, .algo td {
+      border: 1px solid var(--line);
+      padding: 0.28rem;
+      text-align: center;
+    }
+
+    .algo th { background: #f5f5f9; font-weight: 700; }
+
+    .algo select {
+      width: 100%;
+      font-size: 0.78rem;
+      padding: 0.25rem;
+      border-width: 1px;
+      border-radius: 7px;
+    }
+
+    .battle-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .score {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      text-align: center;
+      background: #15172f;
+      color: #fff;
+      border-radius: 12px;
+      padding: 0.7rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .score .v { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+    .score .v.a { color: #60a5fa; }
+    .score .v.b { color: #f87171; }
+
+    .rounds {
+      display: grid;
+      gap: 0.38rem;
+      max-height: 42dvh;
+      overflow: auto;
+    }
+
+    .r {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.35rem 0.55rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      background: #fff;
+    }
+
+    .r .idx { width: 2.4rem; color: var(--muted); font-weight: 700; }
+    .r .h { width: 1.7rem; text-align: center; font-size: 1.05rem; }
+    .r .res { flex: 1; text-align: center; font-weight: 800; }
+    .r .pt { font-size: 0.75rem; }
+
+    .tag {
+      font-size: 0.66rem;
+      border-radius: 999px;
+      padding: 0.08rem 0.4rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tag.hit { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .tag.loop { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 200;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 0.9rem;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.25);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.6rem;
+      gap: 0.5rem;
+    }
+
+    .qr-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0.6rem 0;
+    }
+
+    .qr-wrap img {
+      width: min(300px, 70vw);
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0.35rem;
+    }
+
+    .url-box {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem;
+      font-size: 0.78rem;
+      color: #374151;
+      white-space: nowrap;
+      overflow: auto;
+      background: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← 戻る</a>
+  <h1>通信ルーム | アルゴリズムじゃんけん</h1>
+  <span class="pill">β</span>
+</header>
+
+<div class="container">
+  <div class="card" id="cfgCard">
+    <div class="title">1) Firebase設定</div>
+    <div class="status">最初にFirebase Web Appの設定値を入れて保存してください（この端末のlocalStorageに保存）。</div>
+    <div class="split" style="margin-top:0.6rem;">
+      <div class="col">
+        <input id="apiKey" placeholder="apiKey" />
+        <input id="authDomain" placeholder="authDomain" />
+        <input id="databaseURL" placeholder="databaseURL" />
+        <input id="projectId" placeholder="projectId" />
+      </div>
+      <div class="col">
+        <input id="storageBucket" placeholder="storageBucket" />
+        <input id="messagingSenderId" placeholder="messagingSenderId" />
+        <input id="appId" placeholder="appId" />
+        <div class="row">
+          <button id="saveCfg" class="primary">保存して接続</button>
+          <button id="clearCfg" class="warn">設定クリア</button>
+        </div>
+      </div>
+    </div>
+    <div class="status" id="cfgStatus" style="margin-top:0.55rem;"></div>
+  </div>
+
+  <div class="card hidden" id="entryCard">
+    <div class="title">2) ルーム作成 or 参加</div>
+    <div class="row" style="margin-bottom:0.5rem;">
+      <input id="displayName" placeholder="表示名（例: たいよう）" style="min-width:220px; flex:1;" />
+      <button id="createRoom" class="primary">ホストとして作成</button>
+    </div>
+    <div class="row">
+      <input id="joinCode" class="mono" placeholder="ルームコード（6文字）" maxlength="6" style="width:180px;" />
+      <button id="joinRoom">参加する</button>
+    </div>
+    <div class="status" id="entryStatus" style="margin-top:0.55rem;"></div>
+  </div>
+
+  <div class="card hidden" id="roomCard">
+    <div class="battle-head">
+      <div>
+        <div class="small">ルームコード</div>
+        <div class="room-code mono" id="roomCodeView">------</div>
+      </div>
+      <div class="row">
+        <button id="copyLink">参加URLコピー</button>
+        <button id="showQr">QR表示</button>
+        <button id="leaveRoom" class="bad">退出</button>
+      </div>
+    </div>
+    <div class="status" id="roleStatus"></div>
+  </div>
+
+  <div id="qrModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="title" style="margin:0;">設定込み参加QR</div>
+        <button id="closeQr" class="bad">閉じる</button>
+      </div>
+      <div class="small">このQRは Firebase設定 + ルームコード を含みます。</div>
+      <div class="qr-wrap"><img id="qrImg" alt="参加QR" /></div>
+      <div id="qrUrl" class="url-box mono"></div>
+      <div class="row" style="margin-top:0.6rem;">
+        <button id="copyQrUrl" class="primary">URLをコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="split hidden" id="hostSplit">
+    <div class="card">
+      <div class="title">ホスト操作</div>
+      <div class="status" id="hostInfo"></div>
+      <div class="join-list" id="joinList"></div>
+      <div class="split" style="margin-top:0.7rem; grid-template-columns:1fr 1fr; gap:0.6rem;">
+        <div class="team-box a">
+          <div class="team-h">チームA <span class="small" id="teamAState">未割当</span></div>
+          <div class="small" id="teamAName">---</div>
+          <div class="row" style="margin-top:0.45rem;">
+            <button id="unlockA" class="warn">Aを再編集</button>
+          </div>
+        </div>
+        <div class="team-box b">
+          <div class="team-h">チームB <span class="small" id="teamBState">未割当</span></div>
+          <div class="small" id="teamBName">---</div>
+          <div class="row" style="margin-top:0.45rem;">
+            <button id="unlockB" class="warn">Bを再編集</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:0.8rem;">
+        <button id="startBattle" class="primary">バトル開始</button>
+        <button id="nextStep" class="good">次の手を公開</button>
+        <button id="resetBattle" class="warn">バトルリセット</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">観戦ボード</div>
+      <div id="battleBoard"></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="playerCard">
+    <div class="editor-top">
+      <div>
+        <div class="title" style="margin:0;">チーム入力</div>
+        <div class="small" id="playerTeamLabel">割当待ち...</div>
+      </div>
+      <div class="counter" id="cardCounter"></div>
+    </div>
+
+    <table class="algo" id="algoTable">
+      <thead>
+        <tr>
+          <th>手</th><th>型</th><th>条件</th><th>then</th><th>else</th><th>単体</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="row" style="margin-top:0.7rem;">
+      <button id="saveDraft">下書き保存</button>
+      <button id="readyBtn" class="primary">入力完了（ロック）</button>
+      <button id="unreadyBtn" class="warn">完了解除</button>
+    </div>
+    <div class="status" id="playerStatus" style="margin-top:0.5rem;"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+  import { getDatabase, ref, set, update, remove, get, onValue } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
+
+  const ROUNDS = 10;
+  const MAX_CARDS = 4;
+  const HANDS = ['G', 'C', 'P'];
+  const HN = { G: 'グー', C: 'チョキ', P: 'パー' };
+  const HE = { G: '✊', C: '✌', P: '🖐' };
+  const CONDS = ['cG', 'cC', 'cP', 'wW', 'wL', 'wD'];
+  const CN = {
+    cG: '後判定: 相手がグー',
+    cC: '後判定: 相手がチョキ',
+    cP: '後判定: 相手がパー',
+    wW: '前手番で勝ち',
+    wL: '前手番で負け',
+    wD: '前手番があいこ',
+  };
+
+  const el = (id) => document.getElementById(id);
+  const q = (s, r = document) => r.querySelector(s);
+
+  const uidKey = 'janken-online-uid';
+  const cfgKey = 'janken-online-fb-config';
+
+  function toBase64Url(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  function fromBase64Url(s) {
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
+    const bin = atob(b64 + pad);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(arr);
+  }
+
+  let uid = localStorage.getItem(uidKey);
+  if (!uid) {
+    uid = 'u_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(uidKey, uid);
+  }
+
+  let app = null;
+  let db = null;
+  let roomId = null;
+  let roomData = null;
+  let role = null; // host | player
+  let assignedTeam = null; // A | B
+  let localAlgo = makeEmptyAlgo();
+
+  function makeEmptyAlgo() {
+    return Array.from({ length: ROUNDS }, () => ({ type: 'S', hand: '', cond: '', then: '', els: '' }));
+  }
+
+  function randomRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let s = '';
+    for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function countCards(algo) {
+    const c = { G: 0, C: 0, P: 0 };
+    for (const st of algo) {
+      if (st.type === 'S') {
+        if (st.hand) c[st.hand]++;
+      } else {
+        if (st.then) c[st.then]++;
+        if (st.els) c[st.els]++;
+      }
+    }
+    return c;
+  }
+
+  function validateAlgo(algo) {
+    const err = [];
+    const c = countCards(algo);
+    for (const h of HANDS) {
+      if (c[h] > MAX_CARDS) err.push(`${HN[h]}を${c[h]}枚使用（上限${MAX_CARDS}）`);
+    }
+    for (let i = 0; i < ROUNDS; i++) {
+      const st = algo[i];
+      const n = i + 1;
+      if (st.type === 'S') {
+        if (!st.hand) err.push(`${n}手目: 単体の手を選択してください`);
+      } else {
+        if (i === 0) err.push('1手目は条件分岐不可');
+        if (!st.cond) err.push(`${n}手目: 条件を選択してください`);
+        if (!st.then) err.push(`${n}手目: thenを選択してください`);
+        if (!st.els) err.push(`${n}手目: elseを選択してください`);
+      }
+    }
+    return err;
+  }
+
+  function beats(a, b) {
+    return (a === 'G' && b === 'C') || (a === 'C' && b === 'P') || (a === 'P' && b === 'G');
+  }
+
+  function isPostJudge(step) {
+    return step.type === 'I' && (step.cond === 'cG' || step.cond === 'cC' || step.cond === 'cP');
+  }
+
+  function evalCond(cond, st, oppHand) {
+    if (cond === 'cG') return oppHand === 'G';
+    if (cond === 'cC') return oppHand === 'C';
+    if (cond === 'cP') return oppHand === 'P';
+    if (cond === 'wW') return st.prevRes === 'W';
+    if (cond === 'wL') return st.prevRes === 'L';
+    if (cond === 'wD') return st.prevRes === 'D';
+    return false;
+  }
+
+  function resolveHand(step, idx, st, oppHand) {
+    if (step.type === 'S') return step.hand;
+    if (idx === 0) return step.els;
+    return evalCond(step.cond, st, oppHand) ? step.then : step.els;
+  }
+
+  function runBattle(algoA, algoB) {
+    const out = [];
+    let stA = { prevRes: null };
+    let stB = { prevRes: null };
+    let scA = 0;
+    let scB = 0;
+
+    for (let i = 0; i < ROUNDS; i++) {
+      const sA = algoA[i];
+      const sB = algoB[i];
+      const pjA = isPostJudge(sA);
+      const pjB = isPostJudge(sB);
+      const loop = pjA && pjB;
+
+      let hA = '';
+      let hB = '';
+
+      if (loop) {
+        hA = resolveHand(sA, i, stA, null);
+        hB = resolveHand(sB, i, stB, null);
+      } else if (pjA) {
+        hB = resolveHand(sB, i, stB, null);
+        hA = resolveHand(sA, i, stA, hB);
+      } else if (pjB) {
+        hA = resolveHand(sA, i, stA, null);
+        hB = resolveHand(sB, i, stB, hA);
+      } else {
+        hA = resolveHand(sA, i, stA, null);
+        hB = resolveHand(sB, i, stB, null);
+      }
+
+      let o = 'D';
+      if (hA !== hB) o = beats(hA, hB) ? 'A' : 'B';
+
+      const ptA = o === 'A' ? 2 : o === 'D' ? 1 : 0;
+      const ptB = o === 'B' ? 2 : o === 'D' ? 1 : 0;
+      scA += ptA;
+      scB += ptB;
+
+      out.push({ i, hA, hB, o, ptA, ptB, scA, scB, pjA, pjB, loop });
+
+      stA = { prevRes: o === 'A' ? 'W' : o === 'B' ? 'L' : 'D' };
+      stB = { prevRes: o === 'B' ? 'W' : o === 'A' ? 'L' : 'D' };
+    }
+
+    return out;
+  }
+
+  function fillCfgInputs(cfg) {
+    el('apiKey').value = cfg?.apiKey || '';
+    el('authDomain').value = cfg?.authDomain || '';
+    el('databaseURL').value = cfg?.databaseURL || '';
+    el('projectId').value = cfg?.projectId || '';
+    el('storageBucket').value = cfg?.storageBucket || '';
+    el('messagingSenderId').value = cfg?.messagingSenderId || '';
+    el('appId').value = cfg?.appId || '';
+  }
+
+  function getCfgFromInputs() {
+    return {
+      apiKey: el('apiKey').value.trim(),
+      authDomain: el('authDomain').value.trim(),
+      databaseURL: el('databaseURL').value.trim(),
+      projectId: el('projectId').value.trim(),
+      storageBucket: el('storageBucket').value.trim(),
+      messagingSenderId: el('messagingSenderId').value.trim(),
+      appId: el('appId').value.trim(),
+    };
+  }
+
+  function getCurrentCfgPreferStored() {
+    const stored = localStorage.getItem(cfgKey);
+    if (stored) {
+      try {
+        const cfg = JSON.parse(stored);
+        if (validCfg(cfg)) return cfg;
+      } catch (_) {}
+    }
+    const fromInputs = getCfgFromInputs();
+    if (validCfg(fromInputs)) return fromInputs;
+    return null;
+  }
+
+  function buildInviteUrl(includeCfg = true) {
+    const base = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}online.html`;
+    const p = new URLSearchParams();
+    if (roomId) p.set('room', roomId);
+    if (includeCfg) {
+      const cfg = getCurrentCfgPreferStored();
+      if (cfg) p.set('cfg', toBase64Url(JSON.stringify(cfg)));
+    }
+    return `${base}?${p.toString()}`;
+  }
+
+  function validCfg(cfg) {
+    return Object.values(cfg).every(v => !!v);
+  }
+
+  function setCfgStatus(msg) {
+    el('cfgStatus').textContent = msg;
+  }
+
+  function showEntry() {
+    el('entryCard').classList.remove('hidden');
+  }
+
+  function hideEntry() {
+    el('entryCard').classList.add('hidden');
+  }
+
+  function setEntryStatus(msg) {
+    el('entryStatus').textContent = msg;
+  }
+
+  function showRoomCommon() {
+    el('roomCard').classList.remove('hidden');
+    el('roomCodeView').textContent = roomId || '------';
+  }
+
+  function hideRoomCommon() {
+    el('roomCard').classList.add('hidden');
+    el('qrModal').classList.add('hidden');
+  }
+
+  function setRoleStatus(msg) {
+    el('roleStatus').textContent = msg;
+  }
+
+  function openHostUI() {
+    el('hostSplit').classList.remove('hidden');
+    el('playerCard').classList.add('hidden');
+  }
+
+  function openPlayerUI() {
+    el('playerCard').classList.remove('hidden');
+    el('hostSplit').classList.add('hidden');
+  }
+
+  function closeRoleUI() {
+    el('playerCard').classList.add('hidden');
+    el('hostSplit').classList.add('hidden');
+  }
+
+  function roomRef(path = '') {
+    if (!roomId) return null;
+    return ref(db, `rooms/${roomId}${path ? '/' + path : ''}`);
+  }
+
+  async function connectFirebase(cfg) {
+    try {
+      app = initializeApp(cfg, 'online-' + Math.random().toString(36).slice(2, 7));
+      db = getDatabase(app);
+      setCfgStatus('接続準備OK。ルーム作成または参加に進んでください。');
+      showEntry();
+    } catch (e) {
+      console.error(e);
+      setCfgStatus('接続失敗: 設定値を確認してください。');
+    }
+  }
+
+  async function createRoom() {
+    const name = el('displayName').value.trim() || 'ホスト';
+    let code = '';
+
+    for (let i = 0; i < 10; i++) {
+      code = randomRoomCode();
+      const snap = await get(ref(db, `rooms/${code}`));
+      if (!snap.exists()) break;
+    }
+
+    const base = {
+      createdAt: Date.now(),
+      status: 'lobby',
+      hostId: uid,
+      hostName: name,
+      teams: {
+        A: { playerId: '', playerName: '', ready: false, algo: null },
+        B: { playerId: '', playerName: '', ready: false, algo: null },
+      },
+      joinRequests: {},
+      battle: { step: -1, results: null, done: false },
+    };
+
+    await set(ref(db, `rooms/${code}`), base);
+
+    roomId = code;
+    role = 'host';
+    assignedTeam = null;
+    startRoomWatch();
+
+    hideEntry();
+    showRoomCommon();
+    openHostUI();
+    setRoleStatus('あなたはホストです。参加者をチームA/Bに割り当ててください。');
+  }
+
+  async function joinRoom() {
+    const code = el('joinCode').value.trim().toUpperCase();
+    const name = el('displayName').value.trim() || '参加者';
+
+    if (!code) {
+      setEntryStatus('ルームコードを入力してください。');
+      return;
+    }
+
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (!snap.exists()) {
+      setEntryStatus('ルームが見つかりません。コードを確認してください。');
+      return;
+    }
+
+    roomId = code;
+    role = 'player';
+    assignedTeam = null;
+
+    await update(ref(db, `rooms/${code}/joinRequests/${uid}`), {
+      name,
+      ts: Date.now(),
+    });
+
+    startRoomWatch();
+
+    hideEntry();
+    showRoomCommon();
+    openPlayerUI();
+    setRoleStatus('参加リクエスト送信済み。ホストの割当を待ってください。');
+  }
+
+  function startRoomWatch() {
+    onValue(roomRef(), (snap) => {
+      if (!snap.exists()) {
+        setRoleStatus('ルームが削除されました。');
+        return;
+      }
+      roomData = snap.val();
+      syncUI();
+    });
+  }
+
+  function syncUI() {
+    if (!roomData) return;
+
+    const a = roomData.teams?.A || {};
+    const b = roomData.teams?.B || {};
+
+    el('teamAName').textContent = a.playerName || '---';
+    el('teamBName').textContent = b.playerName || '---';
+    el('teamAState').textContent = a.playerId ? (a.ready ? '入力完了' : '入力中') : '未割当';
+    el('teamBState').textContent = b.playerId ? (b.ready ? '入力完了' : '入力中') : '未割当';
+
+    if (role === 'host') {
+      const reqs = roomData.joinRequests || {};
+      const reqKeys = Object.keys(reqs);
+      el('hostInfo').textContent = `参加待ち: ${reqKeys.length} 人 / A:${a.playerName || '-'} / B:${b.playerName || '-'}`;
+      renderJoinRequests(reqs);
+      renderBattleBoard();
+      el('startBattle').disabled = !(a.ready && b.ready);
+      el('nextStep').disabled = !roomData.battle?.results || roomData.battle?.done;
+    }
+
+    if (role === 'player') {
+      let team = null;
+      if (a.playerId === uid) team = 'A';
+      if (b.playerId === uid) team = 'B';
+      assignedTeam = team;
+      if (!team) {
+        el('playerTeamLabel').textContent = '割当待ち...';
+        el('playerStatus').textContent = 'ホストがチームを割り当てるまで待ってください。';
+        q('#algoTable tbody').innerHTML = '';
+        el('readyBtn').disabled = true;
+        el('saveDraft').disabled = true;
+        el('unreadyBtn').disabled = true;
+      } else {
+        const teamObj = roomData.teams[team];
+        el('playerTeamLabel').textContent = `あなたはチーム${team}です`;
+        if (teamObj.algo) localAlgo = normalizeAlgo(teamObj.algo);
+        renderEditor();
+        const locked = !!teamObj.ready;
+        const errs = validateAlgo(localAlgo);
+        el('readyBtn').disabled = locked || errs.length > 0;
+        el('saveDraft').disabled = locked;
+        el('unreadyBtn').disabled = !locked;
+        el('playerStatus').textContent = locked
+          ? '入力完了済み（ホストが解除すると再編集できます）'
+          : (errs.length ? `未完了: ${errs[0]}` : '入力OK。完了ボタンでロックできます。');
+      }
+
+      renderBattleBoard();
+    }
+  }
+
+  function normalizeAlgo(raw) {
+    const arr = Array.isArray(raw) ? raw : [];
+    return Array.from({ length: ROUNDS }, (_, i) => {
+      const r = arr[i] || {};
+      return {
+        type: r.type === 'I' ? 'I' : 'S',
+        hand: r.hand || '',
+        cond: r.cond || '',
+        then: r.then || '',
+        els: r.els || '',
+      };
+    });
+  }
+
+  function renderJoinRequests(reqs) {
+    const keys = Object.keys(reqs || {});
+    if (!keys.length) {
+      el('joinList').innerHTML = '<div class="small">参加待ちはありません。</div>';
+      return;
+    }
+
+    el('joinList').innerHTML = keys.map((k) => {
+      const nm = reqs[k]?.name || '参加者';
+      return `
+        <div class="join-item">
+          <span class="name">${esc(nm)}</span>
+          <button onclick="window.__assignTeam('${k}','A')">Aへ</button>
+          <button onclick="window.__assignTeam('${k}','B')">Bへ</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function assignTeam(userId, team) {
+    const req = roomData.joinRequests?.[userId];
+    if (!req) return;
+
+    const other = team === 'A' ? 'B' : 'A';
+    const patch = {};
+
+    const prev = roomData.teams?.[team];
+    if (prev?.playerId && prev.playerId !== userId) {
+      patch[`joinRequests/${prev.playerId}`] = { name: prev.playerName || '参加者', ts: Date.now() };
+    }
+
+    if (roomData.teams?.[other]?.playerId === userId) {
+      patch[`teams/${other}`] = { playerId: '', playerName: '', ready: false, algo: null };
+    }
+
+    patch[`teams/${team}`] = {
+      playerId: userId,
+      playerName: req.name || '参加者',
+      ready: false,
+      algo: null,
+    };
+    patch[`joinRequests/${userId}`] = null;
+    patch['battle'] = { step: -1, results: null, done: false };
+
+    await update(roomRef(), patch);
+  }
+
+  function renderEditor() {
+    const tbody = q('#algoTable tbody');
+    if (!assignedTeam) {
+      tbody.innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = localAlgo.map((st, i) => {
+      const condDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
+      const thenDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
+      const elseDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
+      const handDis = st.type !== 'S' ? 'disabled' : '';
+
+      const typeSel = `<select data-i="${i}" data-k="type">
+        <option value="S" ${st.type === 'S' ? 'selected' : ''}>単体</option>
+        <option value="I" ${(st.type === 'I' && i !== 0) ? 'selected' : ''} ${i === 0 ? 'disabled' : ''}>条件分岐</option>
+      </select>`;
+
+      const condSel = `<select data-i="${i}" data-k="cond" ${condDis}>
+        <option value="">-</option>
+        ${CONDS.map(c => `<option value="${c}" ${st.cond === c ? 'selected' : ''}>${CN[c]}</option>`).join('')}
+      </select>`;
+
+      const hSel = (k, dis) => `<select data-i="${i}" data-k="${k}" ${dis}>
+        <option value="">-</option>
+        ${HANDS.map(h => `<option value="${h}" ${st[k] === h ? 'selected' : ''}>${HE[h]} ${HN[h]}</option>`).join('')}
+      </select>`;
+
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${typeSel}</td>
+        <td>${condSel}</td>
+        <td>${hSel('then', thenDis)}</td>
+        <td>${hSel('els', elseDis)}</td>
+        <td>${hSel('hand', handDis)}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('select').forEach((s) => {
+      s.addEventListener('change', () => {
+        const i = Number(s.dataset.i);
+        const k = s.dataset.k;
+        localAlgo[i][k] = s.value;
+        if (k === 'type') {
+          if (s.value === 'S') {
+            localAlgo[i].cond = '';
+            localAlgo[i].then = '';
+            localAlgo[i].els = '';
+          } else {
+            localAlgo[i].hand = '';
+          }
+        }
+        renderEditor();
+        syncLocalValidation();
+      });
+    });
+
+    syncLocalValidation();
+  }
+
+  function syncLocalValidation() {
+    const c = countCards(localAlgo);
+    const html = HANDS.map(h => {
+      const left = MAX_CARDS - c[h];
+      return `<span class="${left < 0 ? 'over' : ''}">${HE[h]} 残り ${left}</span>`;
+    }).join('');
+    el('cardCounter').innerHTML = html;
+
+    const errs = validateAlgo(localAlgo);
+    const locked = !!roomData?.teams?.[assignedTeam]?.ready;
+    el('readyBtn').disabled = !assignedTeam || locked || errs.length > 0;
+    el('saveDraft').disabled = !assignedTeam || locked;
+    el('unreadyBtn').disabled = !assignedTeam || !locked;
+    if (!locked) {
+      el('playerStatus').textContent = errs.length ? `未完了: ${errs[0]}` : '入力OK。完了ボタンでロックできます。';
+    }
+  }
+
+  async function saveDraft() {
+    if (!assignedTeam) return;
+    await update(roomRef(`teams/${assignedTeam}`), {
+      algo: localAlgo,
+      ready: false,
+    });
+    await update(roomRef('battle'), { step: -1, results: null, done: false });
+    el('playerStatus').textContent = '下書きを保存しました。';
+  }
+
+  async function markReady() {
+    if (!assignedTeam) return;
+    const errs = validateAlgo(localAlgo);
+    if (errs.length) {
+      el('playerStatus').textContent = '完了できません: ' + errs[0];
+      return;
+    }
+    await update(roomRef(`teams/${assignedTeam}`), {
+      algo: localAlgo,
+      ready: true,
+    });
+    el('playerStatus').textContent = '入力完了。ホストの開始を待ってください。';
+  }
+
+  async function unreadySelf() {
+    if (!assignedTeam) return;
+    await update(roomRef(`teams/${assignedTeam}`), { ready: false });
+    el('playerStatus').textContent = '完了解除しました。';
+  }
+
+  async function unlockTeam(team) {
+    await update(roomRef(`teams/${team}`), { ready: false });
+  }
+
+  async function startBattleNow() {
+    const a = roomData.teams?.A;
+    const b = roomData.teams?.B;
+    if (!a?.ready || !b?.ready || !a?.algo || !b?.algo) return;
+    const res = runBattle(normalizeAlgo(a.algo), normalizeAlgo(b.algo));
+    await update(roomRef(), {
+      status: 'battle',
+      battle: {
+        step: -1,
+        results: res,
+        done: false,
+      },
+    });
+  }
+
+  async function nextReveal() {
+    const bt = roomData.battle || {};
+    if (!Array.isArray(bt.results)) return;
+    let step = typeof bt.step === 'number' ? bt.step : -1;
+    step++;
+    const done = step >= ROUNDS - 1;
+    await update(roomRef('battle'), {
+      step: Math.min(step, ROUNDS - 1),
+      done,
+    });
+  }
+
+  async function resetBattleNow() {
+    await update(roomRef(), {
+      status: 'lobby',
+      battle: { step: -1, results: null, done: false },
+    });
+  }
+
+  function renderBattleBoard() {
+    const bt = roomData?.battle || {};
+    const results = Array.isArray(bt.results) ? bt.results : null;
+
+    if (!results) {
+      el('battleBoard').innerHTML = '<div class="status">バトル未開始。A/B両チームが入力完了したらホストが開始できます。</div>';
+      return;
+    }
+
+    const step = typeof bt.step === 'number' ? bt.step : -1;
+    const shown = results.slice(0, step + 1);
+    const last = shown[shown.length - 1];
+    const scA = last ? last.scA : 0;
+    const scB = last ? last.scB : 0;
+
+    const rows = shown.map((r, i) => {
+      const res = r.o === 'A' ? 'A勝ち' : r.o === 'B' ? 'B勝ち' : 'あいこ';
+      let tag = '';
+      if (r.loop) tag = '<span class="tag loop">ループ→else</span>';
+      else if (r.pjA) tag = '<span class="tag hit">A後判定</span>';
+      else if (r.pjB) tag = '<span class="tag hit">B後判定</span>';
+      return `<div class="r">
+        <span class="idx">${i + 1}手</span>
+        <span class="h">${HE[r.hA] || '-'}</span>
+        <span>vs</span>
+        <span class="h">${HE[r.hB] || '-'}</span>
+        <span class="res">${res} ${tag}</span>
+        <span class="pt">A+${r.ptA}/B+${r.ptB}</span>
+      </div>`;
+    }).join('');
+
+    let foot = '';
+    if (bt.done && shown.length) {
+      if (scA > scB) foot = `<div class="status">結果: チームAの勝ち (${scA} - ${scB})</div>`;
+      else if (scB > scA) foot = `<div class="status">結果: チームBの勝ち (${scB} - ${scA})</div>`;
+      else foot = `<div class="status">結果: 引き分け (${scA} - ${scB})</div>`;
+    }
+
+    el('battleBoard').innerHTML = `
+      <div class="score">
+        <div><div class="small">TEAM A</div><div class="v a">${scA}</div></div>
+        <div>-</div>
+        <div><div class="small">TEAM B</div><div class="v b">${scB}</div></div>
+      </div>
+      <div class="rounds">${rows || '<div class="status">まだ公開されていません。</div>'}</div>
+      ${foot}
+    `;
+  }
+
+  async function leaveRoomNow() {
+    if (roomId && role === 'player') {
+      try {
+        await remove(roomRef(`joinRequests/${uid}`));
+      } catch (_) {}
+    }
+    roomId = null;
+    roomData = null;
+    role = null;
+    assignedTeam = null;
+    localAlgo = makeEmptyAlgo();
+    hideRoomCommon();
+    closeRoleUI();
+    showEntry();
+    setEntryStatus('退出しました。');
+  }
+
+  window.__assignTeam = (userId, team) => assignTeam(userId, team);
+
+  el('saveCfg').addEventListener('click', async () => {
+    const cfg = getCfgFromInputs();
+    if (!validCfg(cfg)) {
+      setCfgStatus('全項目を入力してください。');
+      return;
+    }
+    localStorage.setItem(cfgKey, JSON.stringify(cfg));
+    setCfgStatus('保存しました。接続中...');
+    await connectFirebase(cfg);
+  });
+
+  el('clearCfg').addEventListener('click', () => {
+    localStorage.removeItem(cfgKey);
+    fillCfgInputs({});
+    setCfgStatus('設定をクリアしました。');
+    hideEntry();
+  });
+
+  el('createRoom').addEventListener('click', async () => {
+    try {
+      await createRoom();
+    } catch (e) {
+      console.error(e);
+      setEntryStatus('ルーム作成に失敗しました。');
+    }
+  });
+
+  el('joinRoom').addEventListener('click', async () => {
+    try {
+      await joinRoom();
+    } catch (e) {
+      console.error(e);
+      setEntryStatus('参加に失敗しました。');
+    }
+  });
+
+  el('copyLink').addEventListener('click', async () => {
+    if (!roomId) return;
+    const url = buildInviteUrl(true);
+    try {
+      await navigator.clipboard.writeText(url);
+      setRoleStatus('設定込み参加URLをコピーしました。');
+    } catch (_) {
+      setRoleStatus('URLコピーに失敗しました。');
+    }
+  });
+
+  el('showQr').addEventListener('click', () => {
+    if (!roomId) return;
+    const url = buildInviteUrl(true);
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}`;
+    el('qrImg').src = qrSrc;
+    el('qrUrl').textContent = url;
+    el('qrModal').classList.remove('hidden');
+  });
+
+  el('closeQr').addEventListener('click', () => {
+    el('qrModal').classList.add('hidden');
+  });
+
+  el('copyQrUrl').addEventListener('click', async () => {
+    const txt = el('qrUrl').textContent || '';
+    if (!txt) return;
+    try {
+      await navigator.clipboard.writeText(txt);
+      setRoleStatus('QR用URLをコピーしました。');
+    } catch (_) {
+      setRoleStatus('URLコピーに失敗しました。');
+    }
+  });
+
+  el('leaveRoom').addEventListener('click', leaveRoomNow);
+  el('unlockA').addEventListener('click', () => unlockTeam('A'));
+  el('unlockB').addEventListener('click', () => unlockTeam('B'));
+  el('startBattle').addEventListener('click', startBattleNow);
+  el('nextStep').addEventListener('click', nextReveal);
+  el('resetBattle').addEventListener('click', resetBattleNow);
+  el('saveDraft').addEventListener('click', saveDraft);
+  el('readyBtn').addEventListener('click', markReady);
+  el('unreadyBtn').addEventListener('click', unreadySelf);
+
+  const storedCfg = localStorage.getItem(cfgKey);
+  if (storedCfg) {
+    try {
+      const cfg = JSON.parse(storedCfg);
+      fillCfgInputs(cfg);
+      setCfgStatus('保存済み設定を読み込みました。接続中...');
+      connectFirebase(cfg);
+    } catch (_) {
+      fillCfgInputs({});
+      setCfgStatus('保存済み設定の読み込みに失敗しました。');
+    }
+  } else {
+    fillCfgInputs({});
+  }
+
+  const params = new URLSearchParams(location.search);
+  const urlRoom = params.get('room');
+  if (urlRoom) el('joinCode').value = urlRoom.toUpperCase();
+
+  const urlCfg = params.get('cfg');
+  if (urlCfg) {
+    try {
+      const cfg = JSON.parse(fromBase64Url(urlCfg));
+      if (validCfg(cfg)) {
+        fillCfgInputs(cfg);
+        localStorage.setItem(cfgKey, JSON.stringify(cfg));
+        setCfgStatus('QRの設定を読み込みました。接続中...');
+        connectFirebase(cfg);
+      }
+    } catch (_) {
+      setCfgStatus('QR設定の読み込みに失敗しました。手動入力してください。');
+    }
+  }
+</script>
+</body>
+</html>

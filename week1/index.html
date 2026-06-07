@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>じゃんけんポイポイ どっち出すの？！</title>
+  <style>
+    :root {
+      --primary: #e84393;
+      --accent: #ffd600;
+      --dark: #1a1a2e;
+      --card: #ffffff;
+      --bg: #f5f0ff;
+      --text: #222;
+      --muted: #666;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, #7b2ff7 100%);
+      color: #fff;
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+
+    header .week-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--dark);
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.9rem;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.5rem, 6vw, 2.4rem);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+
+    header p.tagline {
+      margin-top: 0.6rem;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    section {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    section h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+
+    /* ---- かけ声カード ---- */
+    .chant-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .chant-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.9rem;
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+    }
+
+    .chant-step .num {
+      min-width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .chant-step .content {}
+
+    .chant-step .kakeoe {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--dark);
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .chant-step .desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    /* あいこ */
+    .aikou-box {
+      margin-top: 0.75rem;
+      background: #fff3f9;
+      border: 2px dashed var(--primary);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .aikou-box .icon { font-size: 1.6rem; flex-shrink: 0; }
+
+    .aikou-box .kakeoe {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--primary);
+      display: block;
+    }
+
+    .aikou-box .desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* ---- 戦略 ---- */
+    .strategy-example {
+      background: #1a1a2e;
+      color: #eee;
+      border-radius: 12px;
+      padding: 1.1rem;
+      margin: 0.75rem 0;
+      font-size: 0.95rem;
+    }
+
+    .strategy-example .player-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .strategy-example .player-label {
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 0.15rem 0.5rem;
+      white-space: nowrap;
+    }
+
+    .strategy-example .hands {
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+    }
+
+    .strategy-example .vs {
+      text-align: center;
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 0.9rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+    }
+
+    .matrix th, .matrix td {
+      border: 1px solid #e0d8f0;
+      padding: 0.4rem 0.6rem;
+      text-align: center;
+    }
+
+    .matrix th {
+      background: #f0eaff;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .win  { color: #0a8a3a; font-weight: 700; }
+    .lose { color: #cc2222; font-weight: 700; }
+    .draw { color: #aa7700; font-weight: 700; }
+
+    /* ---- ポイント ---- */
+    .point-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .point-item {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .point-item .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .point-item p { font-size: 0.93rem; }
+
+    /* ---- footer ---- */
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="week-badge">1週目</div>
+  <h1>じゃんけんポイポイ<br>どっち出すの？！</h1>
+  <p class="tagline">一瞬の読み合いが勝負を分ける・リズムじゃんけん</p>
+</header>
+
+<main>
+
+  <!-- かけ声と手順 -->
+  <section>
+    <h2>🎵 かけ声と手順</h2>
+    <div class="chant-flow">
+
+      <div class="chant-step">
+        <div class="num">1</div>
+        <div class="content">
+          <span class="kakeoe">「じゃんけん…」</span>
+          <span class="desc">どの2つの手を出すか頭の中で決める。<br>グー・チョキ・パーから<strong>別々の2つ</strong>を選ぼう。</span>
+        </div>
+      </div>
+
+      <div class="chant-step">
+        <div class="num">2</div>
+        <div class="content">
+          <span class="kakeoe">「ぽい！」</span>
+          <span class="desc">1つ目の手を作り、胸の前に出す。</span>
+        </div>
+      </div>
+
+      <div class="chant-step">
+        <div class="num">3</div>
+        <div class="content">
+          <span class="kakeoe">「ぽい！」</span>
+          <span class="desc">2つ目の手を作り、もう片方の手と<strong>クロス</strong>させて胸の前に出す。</span>
+        </div>
+      </div>
+
+      <div class="chant-step">
+        <div class="num">4</div>
+        <div class="content">
+          <span class="kakeoe">「どっち出すの？」「こっち出すの！」</span>
+          <span class="desc">2つの手のうち<strong>どちらか一方</strong>を選んで前に出す。<br>これがじゃんけんの手になる！</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="aikou-box">
+      <span class="icon">🔁</span>
+      <div>
+        <span class="kakeoe">「あいこでぽいぽい！」</span>
+        <span class="desc">あいこのときはかけ声が変わる。<br>また2つの手を出してリトライ！</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 戦略 -->
+  <section>
+    <h2>🧠 戦略の読み合い</h2>
+    <p style="font-size:0.92rem; margin-bottom:0.9rem;">お互いの2つの手が見えているから、<strong>相手がどっちを選ぶか</strong>を読む一瞬の駆け引きが生まれる！</p>
+
+    <div class="strategy-example">
+      <div class="vs">▼ 例えばこんな場面 ▼</div>
+      <div class="player-row">
+        <span class="player-label">自分</span>
+        <span class="hands">✊ &amp; 🖐</span>
+        <span style="font-size:0.8rem; color:#aaa;">（グー &amp; パー）</span>
+      </div>
+      <div class="player-row">
+        <span class="player-label">相手</span>
+        <span class="hands">🖐 &amp; ✌</span>
+        <span style="font-size:0.8rem; color:#aaa;">（パー &amp; チョキ）</span>
+      </div>
+    </div>
+
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>自分 ↓ / 相手 →</th>
+          <th>🖐 パー</th>
+          <th>✌ チョキ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>✊ グー</th>
+          <td class="lose">負け</td>
+          <td class="win">勝ち！</td>
+        </tr>
+        <tr>
+          <th>🖐 パー</th>
+          <td class="draw">あいこ</td>
+          <td class="lose">負け</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:0.88rem; color:var(--muted); margin-top:0.75rem;">
+      グーを出せばチョキに勝てるが、相手がパーを出したら負け。<br>
+      パーを出せば相手がパーならあいこだが、チョキを出されたら負け。<br>
+      <strong>→ あなたならどっちを選ぶ？</strong>
+    </p>
+  </section>
+
+  <!-- ポイント -->
+  <section>
+    <h2>💡 このゲームのポイント</h2>
+    <div class="point-list">
+      <div class="point-item">
+        <span class="icon">👀</span>
+        <p>相手の2つの手が<strong>見えている</strong>から、普通のじゃんけんより情報量が多い</p>
+      </div>
+      <div class="point-item">
+        <span class="icon">⚡</span>
+        <p>でも決断は<strong>一瞬</strong>。迷っている間に相手も動く</p>
+      </div>
+      <div class="point-item">
+        <span class="icon">🎲</span>
+        <p>あえて<strong>読まれやすい手</strong>を見せて、心理的にゆさぶる作戦も有効</p>
+      </div>
+      <div class="point-item">
+        <span class="icon">🤝</span>
+        <p>2人のタイマンが最も熱い。グループ戦もできる！</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  じゃんけんプロジェクト &nbsp;|&nbsp; 1週目
+</footer>
+
+</body>
+</html>

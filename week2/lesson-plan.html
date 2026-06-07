@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>指導案｜アルゴリズムじゃんけん</title>
+  <style>
+    @page { size: A4; margin: 12mm 13mm 12mm 13mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      font-size: 11pt; line-height: 1.7; color: #111;
+      background: #fff; width: 184mm; margin: 0 auto;
+    }
+    .doc-title {
+      font-size: 16pt; font-weight: 900; text-align: center;
+      letter-spacing: 0.15em; border-bottom: 2.5pt solid #111;
+      padding-bottom: 4pt; margin-bottom: 6pt;
+    }
+    .meta { display: flex; border: 1pt solid #111; margin-bottom: 8pt; font-size: 10pt; }
+    .meta-cell { flex: 1; padding: 3pt 6pt; border-right: 1pt solid #111; }
+    .meta-cell:last-child { border-right: none; }
+    .meta-cell .lbl { font-size: 8pt; color: #666; display: block; line-height: 1.2; }
+    .meta-cell .val { font-weight: 700; }
+    h2 {
+      font-size: 11pt; font-weight: 900; background: #111; color: #fff;
+      padding: 3pt 7pt; margin-bottom: 5pt; letter-spacing: 0.08em;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5pt; margin-bottom: 8pt; }
+    th, td { border: 0.7pt solid #999; padding: 4pt 6pt; vertical-align: top; }
+    th { background: #e8e8e8; font-weight: 700; text-align: center; white-space: nowrap; }
+    .main-layout { display: flex; gap: 8pt; margin-bottom: 8pt; align-items: flex-start; }
+    .main-left { flex: 1; }
+    .app-screenshot { width: 62mm; flex-shrink: 0; }
+    .app-screenshot img { width: 100%; border-radius: 6pt; border: 1pt solid #ccc; box-shadow: 2pt 3pt 8pt rgba(0,0,0,0.12); display: block; }
+    .app-screenshot .cap { font-size: 8pt; color: #666; text-align: center; margin-top: 3pt; }
+    .rule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6pt; margin-bottom: 8pt; }
+    .rule-box { border: 1pt solid #bbb; border-radius: 3pt; padding: 5pt 8pt; }
+    .rule-box h3 { font-size: 10pt; font-weight: 700; border-left: 3pt solid #555; padding-left: 4pt; margin-bottom: 4pt; }
+    .rule-box ul { padding-left: 1.3em; font-size: 10.5pt; }
+    .rule-box ul li { margin-bottom: 2pt; }
+    .timeline td:nth-child(1) { width: 8mm; text-align: center; font-weight: 700; white-space: nowrap; }
+    .timeline td:nth-child(2) { width: 20mm; font-weight: 700; text-align: center; }
+    .timeline td:nth-child(4) { width: 36mm; font-size: 10pt; color: #444; }
+    .eval-table td:nth-child(1) { width: 24mm; font-weight: 700; }
+    .goal-list { padding-left: 1.3em; font-size: 11pt; margin-bottom: 6pt; }
+    .goal-list li { margin-bottom: 3pt; }
+    .note { font-size: 9pt; color: #555; border-top: 0.7pt dashed #bbb; padding-top: 4pt; margin-top: 4pt; }
+    @media print { body { margin: 0; width: 100%; } .no-print { display: none; } }
+    .print-btn {
+      position: fixed; bottom: 16px; right: 16px;
+      padding: 0.6rem 1.2rem; background: #111; color: #fff;
+      border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="doc-title">指導案｜アルゴリズムじゃんけん</div>
+
+<div class="meta">
+  <div class="meta-cell"><span class="lbl">実施日</span><span class="val">2週目</span></div>
+  <div class="meta-cell"><span class="lbl">対象</span><span class="val">子ども 5〜10 名・大人 6 名（混合）</span></div>
+  <div class="meta-cell"><span class="lbl">時間</span><span class="val">45 分</span></div>
+  <div class="meta-cell"><span class="lbl">形式</span><span class="val">チーム戦（2〜3 チーム）</span></div>
+  <div class="meta-cell"><span class="lbl">担当</span><span class="val">　　　　　　</span></div>
+</div>
+
+<div class="main-layout">
+  <div class="main-left">
+    <h2>▌ ねらい</h2>
+    <ul class="goal-list">
+      <li>条件分岐（if–then–else）の構造を体験的に理解する</li>
+      <li>チームで戦略を設計・言語化する</li>
+      <li>結果を分析して改善案を考える</li>
+      <li>「決定論的ルール」と「読み合い」の関係に気づく</li>
+    </ul>
+    <h2>▌ 準備物</h2>
+    <ul class="goal-list" style="margin-top:4pt;">
+      <li>ワークシート（チーム分）・封筒（封印用）</li>
+      <li>バトルシミュレーター（week2/battle.html）</li>
+      <li>プロジェクターまたは大型モニター・タイマー</li>
+    </ul>
+  </div>
+  <div class="app-screenshot">
+    <img src="app-screenshot.png" alt="バトルシミュレーター画面" />
+    <div class="cap">バトルシミュレーター（week2/battle.html）</div>
+  </div>
+</div>
+
+<h2>▌ ゲームルール</h2>
+<div class="rule-grid">
+  <div class="rule-box">
+    <h3>手札と手番</h3>
+    <ul>
+      <li>グー・チョキ・パーを各 <strong>4枚</strong>（計12枚）</li>
+      <li><strong>単体：</strong>手を1枚指定（1枚消費）</li>
+      <li><strong>条件分岐：</strong>ならば A でなければ B（2枚消費）</li>
+      <li>条件分岐は最大 <strong>2回</strong> まで／1手目は不可</li>
+    </ul>
+  </div>
+  <div class="rule-box">
+    <h3>条件（6種）と得点</h3>
+    <ul>
+      <li>【後判定】この相手の手がグー／チョキ／パーなら</li>
+      <li>前の手番で勝ち／負け／あいこ</li>
+    </ul>
+    <p style="font-size:9.5pt; margin:4pt 0; color:#444;">
+      ※後判定：相手の手を見て後出し可。両者同時後判定→両者 else。
+    </p>
+    <ul>
+      <li>勝ち <strong>2点</strong>　あいこ <strong>1点</strong>　負け <strong>0点</strong>　10手番合計で決定</li>
+    </ul>
+  </div>
+</div>
+
+<h2>▌ 進行タイムライン</h2>
+<table class="timeline">
+  <thead>
+    <tr><th>経過</th><th>フェーズ</th><th>内容</th><th>ファシリテーターのポイント</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>0′</td><td>導入</td><td>「決めたルールで自動じゃんけん」デモ提示</td><td>まず見せてから説明する</td></tr>
+    <tr><td>5′</td><td>ルール説明</td><td>手札・手番・条件・得点をスクリーンで説明。条件分岐は「高価なカード」と表現</td><td>「後判定は強い。でも…？」で疑問を残す</td></tr>
+    <tr><td>10′</td><td>設計①</td><td>チーム分け→ワークシートで10手番を設計→封印</td><td>「全部グーにしたら？」を問いかける</td></tr>
+    <tr><td>22′</td><td>バトル①</td><td>封印開封→シミュレーターに入力→1手ずつ全員で確認</td><td>「なぜこの手を選んだ？」と聞く</td></tr>
+    <tr><td>29′</td><td>振り返り①</td><td>「どこで点を落とした？」「ループしたのはどこ？」を全体共有</td><td>勝敗より分析の言語化を重視</td></tr>
+    <tr><td>34′</td><td>設計②</td><td>改良版アルゴリズムを再設計・封印（5分）</td><td>「相手の手を読んだ設計にできる？」</td></tr>
+    <tr><td>39′</td><td>バトル②</td><td>同じ流れでバトル実施</td><td>改良点が結果に出ているか注目</td></tr>
+    <tr><td>43′</td><td>まとめ</td><td>「条件分岐＝プログラミングの基本」を言語化。来週の予告</td><td>「もっと面白くするには？」で締める</td></tr>
+  </tbody>
+</table>
+
+<h2>▌ ミニ学習メモ（elseは同じ確率ではない）</h2>
+<table>
+  <thead>
+    <tr><th>設定</th><th>if が不成立のとき（elseが発動）</th><th>elseの期待値（勝ち2/あいこ1/負け0）</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>if: 相手がグーなら → パー</td>
+      <td>相手はチョキ or パー（半々と仮定）</td>
+      <td>
+        else=グー: 1.0<br>
+        else=チョキ: 1.5（最良）<br>
+        else=パー: 0.5
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="font-size:10pt; color:#444; margin-top:-3pt; margin-bottom:8pt;">
+  ポイント: else は「ifが外れたときの相手分布」に対して最適化する。どれでも同じにはならない。
+</p>
+
+<div style="display:flex; gap:8pt;">
+  <div style="flex:1;">
+    <h2>▌ 評価の観点</h2>
+    <table class="eval-table" style="margin-top:4pt;">
+      <tr><td>知識・理解</td><td>if–then–else の構造を言葉で説明できる</td></tr>
+      <tr><td>思考・判断</td><td>結果を見て設計の問題点を指摘できる</td></tr>
+      <tr><td>協力・表現</td><td>チームで意見を交わして設計をまとめられる</td></tr>
+    </table>
+  </div>
+  <div style="flex:1;">
+    <h2>▌ 留意事項</h2>
+    <ul style="padding-left:1.3em; font-size:10.5pt; margin-top:4pt;">
+      <li>両者後判定のループはシミュレーターが自動処理</li>
+      <li>「後判定＝ズル」と感じる子にはルールの一部と説明</li>
+      <li>エクストラ：手札5枚×3で条件分岐を最大5回に拡張可</li>
+    </ul>
+  </div>
+</div>
+
+<div class="note" style="margin-top:6pt;">
+  【関連ファイル】week2/battle.html（バトルシミュレーター）　【プロジェクト】じゃんけんプロジェクト 2週目／全5週
+</div>
+
+<button class="print-btn no-print" onclick="window.print()">🖨 印刷</button>
+
+</body>
+</html>
