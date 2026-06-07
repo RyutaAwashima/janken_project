@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebase ブリーフィング | アルゴリズムじゃんけん</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: #f7f5ff;
+      color: #1f2937;
+      line-height: 1.65;
+      padding: 1rem;
+    }
+    .sheet {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+      padding: 1rem 1.1rem 1.2rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.15rem;
+    }
+    .lead {
+      color: #6b7280;
+      font-size: 0.92rem;
+      margin-bottom: 0.8rem;
+    }
+    h2 {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #fff;
+      background: #312e81;
+      border-radius: 8px;
+      padding: 0.3rem 0.55rem;
+      margin: 0.75rem 0 0.45rem;
+    }
+    p, li { font-size: 0.92rem; }
+    ul, ol { padding-left: 1.2rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+    }
+    .box {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 0.55rem 0.65rem;
+      background: #fcfcff;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 0.08rem 0.48rem;
+      margin-right: 0.35rem;
+    }
+    .warn {
+      border-left: 4px solid #d97706;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      margin-top: 0.5rem;
+      font-size: 0.86rem;
+    }
+    .ok {
+      border-left: 4px solid #059669;
+      background: #ecfdf5;
+      color: #065f46;
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      margin-top: 0.45rem;
+      font-size: 0.86rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.35rem;
+      font-size: 0.87rem;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 0.3rem 0.45rem;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #eef2ff; }
+    .foot {
+      margin-top: 0.7rem;
+      font-size: 0.8rem;
+      color: #6b7280;
+      border-top: 1px dashed #d1d5db;
+      padding-top: 0.45rem;
+    }
+    .print-btn {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+      font-weight: 700;
+      padding: 0.58rem 1rem;
+      cursor: pointer;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .sheet { box-shadow: none; border: none; max-width: none; margin: 0; border-radius: 0; }
+      .print-btn { display: none; }
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <h1>Firebase ブリーフィング</h1>
+    <p class="lead">対象: アルゴリズムじゃんけん 通信ルーム運用者（先生・スタッフ向け）</p>
+
+    <h2>1. Firebaseって何？</h2>
+    <p>
+      Firebaseは「複数端末の状態を同期するためのクラウド基盤」です。
+      今回は <span class="tag">Realtime Database</span> を使って、
+      ホスト端末と参加者端末の入力内容を同時共有しています。
+    </p>
+
+    <div class="grid" style="margin-top:0.45rem;">
+      <div class="box">
+        <strong>Firebaseなし</strong>
+        <ul>
+          <li>紙回収→手入力が必要</li>
+          <li>入力ミスが起きやすい</li>
+          <li>進行が止まりやすい</li>
+        </ul>
+      </div>
+      <div class="box">
+        <strong>Firebaseあり</strong>
+        <ul>
+          <li>各端末が直接入力</li>
+          <li>ホスト画面に即反映</li>
+          <li>提出ロックで公平に運用</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>2. 今回どこに使っている？</h2>
+    <table>
+      <thead>
+        <tr><th>項目</th><th>役割</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ルームコード</td><td>同じ対戦部屋に参加するための合言葉</td></tr>
+        <tr><td>参加者リスト</td><td>誰が入っているか、ホストが確認</td></tr>
+        <tr><td>A/B割り当て</td><td>チームを確定</td></tr>
+        <tr><td>アルゴリズム提出</td><td>10手の入力を保存、完了でロック</td></tr>
+        <tr><td>バトル結果</td><td>1手ずつ公開、スコアを全端末に同期</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. 現場での運用フロー（最短）</h2>
+    <ol>
+      <li>ホスト端末で <strong>通信ルームページ</strong> を開く</li>
+      <li>Firebase設定を読み込み、ルーム作成</li>
+      <li>QR表示し、参加者は読み取り参加</li>
+      <li>ホストが参加者をチームA/Bに割り当て</li>
+      <li>各チームが入力して「完了（ロック）」</li>
+      <li>ホストが「バトル開始」→「次の手を公開」で進行</li>
+    </ol>
+
+    <h2>4. よくある不安への答え</h2>
+    <div class="grid">
+      <div class="box">
+        <strong>Q. APIキーが見えても大丈夫？</strong>
+        <p>基本的に公開前提の値です。重要なのはDBルール設計です。</p>
+      </div>
+      <div class="box">
+        <strong>Q. 通信が切れたら？</strong>
+        <p>再接続で同じルームに戻れば状態を再取得できます。</p>
+      </div>
+      <div class="box">
+        <strong>Q. 不正編集されない？</strong>
+        <p>完了ロックとホスト操作で防止。公開運用時はルール強化必須。</p>
+      </div>
+      <div class="box">
+        <strong>Q. 初回設定が難しい</strong>
+        <p>一度接続すれば端末内保存され、次回は再入力不要です。</p>
+      </div>
+    </div>
+
+    <h2>5. セキュリティの最低ライン</h2>
+    <div class="warn">
+      テスト運用中は read/write を広く許可していてもOKですが、外部公開状態で長期運用は避けてください。
+    </div>
+    <div class="ok">
+      授業後の推奨: ルールを「rooms配下のみ」「短期運用」「不要ルーム削除」に制限する。
+    </div>
+
+    <h2>6. トラブル時チェックリスト</h2>
+    <ul>
+      <li>databaseURL が正しいか（末尾の文字ミスが多い）</li>
+      <li>Realtime Database が作成済みか</li>
+      <li>ルールが読み書き可能か（テスト時）</li>
+      <li>全端末で同じFirebaseプロジェクトを使っているか</li>
+      <li>QRで開いたURLに room パラメータが入っているか</li>
+    </ul>
+
+    <p class="foot">
+      関連ページ: week2/online.html（通信ルーム運用画面）
+    </p>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">印刷</button>
+</body>
+</html>

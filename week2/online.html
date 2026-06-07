@@ -118,6 +118,13 @@
 
     .hidden { display: none !important; }
 
+    .collapse-btn {
+      padding: 0.38rem 0.65rem;
+      font-size: 0.78rem;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
     .pill {
       display: inline-block;
       border-radius: 999px;
@@ -295,6 +302,24 @@
     .tag.hit { background: #fef3c7; color: #92400e; border-color: #fde68a; }
     .tag.loop { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 
+    .phase-live {
+      animation: phaseReveal 0.22s ease-out, phasePulse 1.1s ease-in-out infinite alternate;
+    }
+
+    .phase-note {
+      animation: phaseReveal 0.22s ease-out;
+    }
+
+    @keyframes phaseReveal {
+      from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes phasePulse {
+      from { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.06); }
+      to { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12); }
+    }
+
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
     .modal-backdrop {
@@ -362,26 +387,31 @@
 
 <div class="container">
   <div class="card" id="cfgCard">
-    <div class="title">1) Firebase設定</div>
-    <div class="status">最初にFirebase Web Appの設定値を入れて保存してください（この端末のlocalStorageに保存）。</div>
-    <div class="split" style="margin-top:0.6rem;">
-      <div class="col">
-        <input id="apiKey" placeholder="apiKey" />
-        <input id="authDomain" placeholder="authDomain" />
-        <input id="databaseURL" placeholder="databaseURL" />
-        <input id="projectId" placeholder="projectId" />
-      </div>
-      <div class="col">
-        <input id="storageBucket" placeholder="storageBucket" />
-        <input id="messagingSenderId" placeholder="messagingSenderId" />
-        <input id="appId" placeholder="appId" />
-        <div class="row">
-          <button id="saveCfg" class="primary">保存して接続</button>
-          <button id="clearCfg" class="warn">設定クリア</button>
+    <div class="battle-head" style="margin-bottom:0.5rem;">
+      <div class="title" style="margin:0;">1) Firebase設定</div>
+      <button id="toggleCfg" class="collapse-btn">設定を隠す</button>
+    </div>
+    <div id="cfgBody">
+      <div class="status">最初にFirebase Web Appの設定値を入れて保存してください（この端末のlocalStorageに保存）。</div>
+      <div class="split" style="margin-top:0.6rem;">
+        <div class="col">
+          <input id="apiKey" placeholder="apiKey" />
+          <input id="authDomain" placeholder="authDomain" />
+          <input id="databaseURL" placeholder="databaseURL" />
+          <input id="projectId" placeholder="projectId" />
+        </div>
+        <div class="col">
+          <input id="storageBucket" placeholder="storageBucket" />
+          <input id="messagingSenderId" placeholder="messagingSenderId" />
+          <input id="appId" placeholder="appId" />
+          <div class="row">
+            <button id="saveCfg" class="primary">保存して接続</button>
+            <button id="clearCfg" class="warn">設定クリア</button>
+          </div>
         </div>
       </div>
+      <div class="status" id="cfgStatus" style="margin-top:0.55rem;"></div>
     </div>
-    <div class="status" id="cfgStatus" style="margin-top:0.55rem;"></div>
   </div>
 
   <div class="card hidden" id="entryCard">
@@ -512,6 +542,7 @@
 
   const uidKey = 'janken-online-uid';
   const cfgKey = 'janken-online-fb-config';
+  const cfgCollapsedKey = 'janken-online-cfg-collapsed';
 
   function toBase64Url(str) {
     const bytes = new TextEncoder().encode(str);
@@ -611,9 +642,10 @@
   }
 
   function resolveHand(step, idx, st, oppHand) {
-    if (step.type === 'S') return step.hand;
-    if (idx === 0) return step.els;
-    return evalCond(step.cond, st, oppHand) ? step.then : step.els;
+    if (step.type === 'S') return { hand: step.hand, branch: 'single' };
+    if (idx === 0) return { hand: step.els, branch: 'else' };
+    const hit = evalCond(step.cond, st, oppHand);
+    return { hand: hit ? step.then : step.els, branch: hit ? 'then' : 'else' };
   }
 
   function runBattle(algoA, algoB) {
@@ -632,19 +664,29 @@
 
       let hA = '';
       let hB = '';
+      let brA = 'single';
+      let brB = 'single';
 
       if (loop) {
-        hA = resolveHand(sA, i, stA, null);
-        hB = resolveHand(sB, i, stB, null);
+        const ra = resolveHand(sA, i, stA, null);
+        const rb = resolveHand(sB, i, stB, null);
+        hA = ra.hand; brA = ra.branch;
+        hB = rb.hand; brB = rb.branch;
       } else if (pjA) {
-        hB = resolveHand(sB, i, stB, null);
-        hA = resolveHand(sA, i, stA, hB);
+        const rb = resolveHand(sB, i, stB, null);
+        hB = rb.hand; brB = rb.branch;
+        const ra = resolveHand(sA, i, stA, hB);
+        hA = ra.hand; brA = ra.branch;
       } else if (pjB) {
-        hA = resolveHand(sA, i, stA, null);
-        hB = resolveHand(sB, i, stB, hA);
+        const ra = resolveHand(sA, i, stA, null);
+        hA = ra.hand; brA = ra.branch;
+        const rb = resolveHand(sB, i, stB, hA);
+        hB = rb.hand; brB = rb.branch;
       } else {
-        hA = resolveHand(sA, i, stA, null);
-        hB = resolveHand(sB, i, stB, null);
+        const ra = resolveHand(sA, i, stA, null);
+        const rb = resolveHand(sB, i, stB, null);
+        hA = ra.hand; brA = ra.branch;
+        hB = rb.hand; brB = rb.branch;
       }
 
       let o = 'D';
@@ -655,7 +697,12 @@
       scA += ptA;
       scB += ptB;
 
-      out.push({ i, hA, hB, o, ptA, ptB, scA, scB, pjA, pjB, loop });
+      out.push({
+        i, hA, hB, o, ptA, ptB, scA, scB, pjA, pjB, loop,
+        aType: sA.type, bType: sB.type,
+        aCond: sA.cond || '', bCond: sB.cond || '',
+        aBranch: brA, bBranch: brB,
+      });
 
       stA = { prevRes: o === 'A' ? 'W' : o === 'B' ? 'L' : 'D' };
       stB = { prevRes: o === 'B' ? 'W' : o === 'A' ? 'L' : 'D' };
@@ -718,6 +765,12 @@
     el('cfgStatus').textContent = msg;
   }
 
+  function setCfgCollapsed(collapsed) {
+    el('cfgBody').classList.toggle('hidden', collapsed);
+    el('toggleCfg').textContent = collapsed ? '設定を開く' : '設定を隠す';
+    localStorage.setItem(cfgCollapsedKey, collapsed ? '1' : '0');
+  }
+
   function showEntry() {
     el('entryCard').classList.remove('hidden');
   }
@@ -769,6 +822,7 @@
       app = initializeApp(cfg, 'online-' + Math.random().toString(36).slice(2, 7));
       db = getDatabase(app);
       setCfgStatus('接続準備OK。ルーム作成または参加に進んでください。');
+      setCfgCollapsed(true);
       showEntry();
     } catch (e) {
       console.error(e);
@@ -796,7 +850,7 @@
         B: { playerId: '', playerName: '', ready: false, algo: null },
       },
       joinRequests: {},
-      battle: { step: -1, results: null, done: false },
+      battle: { step: -1, results: null, done: false, reveal: { active: false, index: -1, phase: '' } },
     };
 
     await set(ref(db, `rooms/${code}`), base);
@@ -872,8 +926,8 @@
       el('hostInfo').textContent = `参加待ち: ${reqKeys.length} 人 / A:${a.playerName || '-'} / B:${b.playerName || '-'}`;
       renderJoinRequests(reqs);
       renderBattleBoard();
-      el('startBattle').disabled = !(a.ready && b.ready);
-      el('nextStep').disabled = !roomData.battle?.results || roomData.battle?.done;
+      el('startBattle').disabled = !(a.ready && b.ready) || !!roomData.battle?.reveal?.active;
+      el('nextStep').disabled = !roomData.battle?.results || roomData.battle?.done || !!roomData.battle?.reveal?.active;
     }
 
     if (role === 'player') {
@@ -963,7 +1017,7 @@
       algo: null,
     };
     patch[`joinRequests/${userId}`] = null;
-    patch['battle'] = { step: -1, results: null, done: false };
+    patch['battle'] = { step: -1, results: null, done: false, reveal: { active: false, index: -1, phase: '' } };
 
     await update(roomRef(), patch);
   }
@@ -1052,7 +1106,7 @@
       algo: localAlgo,
       ready: false,
     });
-    await update(roomRef('battle'), { step: -1, results: null, done: false });
+    await update(roomRef('battle'), { step: -1, results: null, done: false, reveal: { active: false, index: -1, phase: '' } });
     el('playerStatus').textContent = '下書きを保存しました。';
   }
 
@@ -1091,6 +1145,7 @@
         step: -1,
         results: res,
         done: false,
+        reveal: { active: false, index: -1, phase: '' },
       },
     });
   }
@@ -1098,19 +1153,59 @@
   async function nextReveal() {
     const bt = roomData.battle || {};
     if (!Array.isArray(bt.results)) return;
-    let step = typeof bt.step === 'number' ? bt.step : -1;
-    step++;
-    const done = step >= ROUNDS - 1;
+    if (bt.reveal?.active) return;
+
+    const step = typeof bt.step === 'number' ? bt.step : -1;
+    const idx = step + 1;
+    if (idx >= ROUNDS) return;
+
+    const r = bt.results[idx];
+    if (!r) return;
+
+    const phases = [];
+    if (r.loop) {
+      phases.push('a-cond', 'b-cond', 'loop-both-else', 'a-branch', 'b-branch', 'result');
+    } else if (r.pjA) {
+      phases.push('a-cond', 'b-hand', 'a-branch', 'result');
+    } else if (r.pjB) {
+      phases.push('a-hand', 'b-cond', 'b-branch', 'result');
+    } else {
+      if (r.aType === 'I') phases.push('a-cond');
+      phases.push('a-hand');
+      if (r.bType === 'I') phases.push('b-cond');
+      phases.push('b-hand');
+      if (r.aType === 'I') phases.push('a-branch');
+      if (r.bType === 'I') phases.push('b-branch');
+      phases.push('result');
+    }
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     await update(roomRef('battle'), {
-      step: Math.min(step, ROUNDS - 1),
+      reveal: { active: true, index: idx, phase: phases[0] },
+      done: false,
+    });
+
+    for (let i = 1; i < phases.length; i++) {
+      await sleep(700);
+      await update(roomRef('battle'), {
+        reveal: { active: true, index: idx, phase: phases[i] },
+      });
+    }
+
+    await sleep(700);
+    const done = idx >= ROUNDS - 1;
+    await update(roomRef('battle'), {
+      step: idx,
       done,
+      reveal: { active: false, index: idx, phase: '' },
     });
   }
 
   async function resetBattleNow() {
     await update(roomRef(), {
       status: 'lobby',
-      battle: { step: -1, results: null, done: false },
+      battle: { step: -1, results: null, done: false, reveal: { active: false, index: -1, phase: '' } },
     });
   }
 
@@ -1128,6 +1223,45 @@
     const last = shown[shown.length - 1];
     const scA = last ? last.scA : 0;
     const scB = last ? last.scB : 0;
+    const reveal = bt.reveal || null;
+
+    let liveRow = '';
+    if (reveal && reveal.active) {
+      const cur = results[reveal.index];
+      if (cur) {
+        let a = '…';
+        let b = '…';
+        let rs = '進行中';
+        if (reveal.phase === 'a-hand') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+        } else if (reveal.phase === 'b-hand') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+          b = `${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}`;
+        } else if (reveal.phase === 'a-branch') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+          b = `${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}`;
+        } else if (reveal.phase === 'b-branch') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+          b = `${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}`;
+        } else if (reveal.phase === 'result') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+          b = `${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}`;
+          rs = cur.o === 'A' ? 'A勝ち' : cur.o === 'B' ? 'B勝ち' : 'あいこ';
+        }
+        if (reveal.phase === 'loop-both-else') {
+          a = `${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}`;
+          b = `${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}`;
+        }
+        liveRow = `<div class="r phase-live" style="border-style:dashed; background:#fffbeb;">
+          <span class="idx">${(cur.i || 0) + 1}手</span>
+          <span class="h">${a}</span>
+          <span>vs</span>
+          <span class="h">${b}</span>
+          <span class="res">${rs}</span>
+          <span class="pt">ライブ</span>
+        </div>`;
+      }
+    }
 
     const rows = shown.map((r, i) => {
       const res = r.o === 'A' ? 'A勝ち' : r.o === 'B' ? 'B勝ち' : 'あいこ';
@@ -1146,6 +1280,29 @@
     }).join('');
 
     let foot = '';
+    if (reveal && reveal.active) {
+      const cur = results[reveal.index];
+      if (cur) {
+        if (reveal.phase === 'a-cond') {
+          foot = '<div class="status phase-note">Aチーム 条件分岐! 後判定になります。</div>';
+        } else if (reveal.phase === 'a-hand') {
+          foot = `<div class="status phase-note">Aの手: ${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}</div>`;
+        } else if (reveal.phase === 'b-cond') {
+          foot = '<div class="status phase-note">Bチーム 条件分岐!</div>';
+        } else if (reveal.phase === 'b-hand') {
+          foot = `<div class="status phase-note">Bの手: ${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}</div>`;
+        } else if (reveal.phase === 'a-branch') {
+          foot = `<div class="status phase-note">A ${cur.aBranch === 'then' ? 'then' : 'else'} 発動: ${HE[cur.hA] || '-'} ${HN[cur.hA] || ''}</div>`;
+        } else if (reveal.phase === 'b-branch') {
+          foot = `<div class="status phase-note">B ${cur.bBranch === 'then' ? 'then' : 'else'} 発動: ${HE[cur.hB] || '-'} ${HN[cur.hB] || ''}</div>`;
+        } else if (reveal.phase === 'loop-both-else') {
+          foot = '<div class="status phase-note">条件分岐がカチ合い: 同じ判定で両者 else を使用</div>';
+        } else if (reveal.phase === 'result') {
+          foot = `<div class="status phase-note">結果: ${cur.o === 'A' ? 'A勝ち' : cur.o === 'B' ? 'B勝ち' : 'あいこ'}（A+${cur.ptA} / B+${cur.ptB}）</div>`;
+        }
+      }
+    }
+
     if (bt.done && shown.length) {
       if (scA > scB) foot = `<div class="status">結果: チームAの勝ち (${scA} - ${scB})</div>`;
       else if (scB > scA) foot = `<div class="status">結果: チームBの勝ち (${scB} - ${scA})</div>`;
@@ -1158,7 +1315,7 @@
         <div>-</div>
         <div><div class="small">TEAM B</div><div class="v b">${scB}</div></div>
       </div>
-      <div class="rounds">${rows || '<div class="status">まだ公開されていません。</div>'}</div>
+      <div class="rounds">${liveRow}${rows || '<div class="status">まだ公開されていません。</div>'}</div>
       ${foot}
     `;
   }
@@ -1198,6 +1355,11 @@
     fillCfgInputs({});
     setCfgStatus('設定をクリアしました。');
     hideEntry();
+    setCfgCollapsed(false);
+  });
+
+  el('toggleCfg').addEventListener('click', () => {
+    setCfgCollapsed(!el('cfgBody').classList.contains('hidden'));
   });
 
   el('createRoom').addEventListener('click', async () => {
@@ -1264,6 +1426,8 @@
   el('unreadyBtn').addEventListener('click', unreadySelf);
 
   const storedCfg = localStorage.getItem(cfgKey);
+  const storedCfgCollapsed = localStorage.getItem(cfgCollapsedKey) === '1';
+  setCfgCollapsed(storedCfgCollapsed);
   if (storedCfg) {
     try {
       const cfg = JSON.parse(storedCfg);
