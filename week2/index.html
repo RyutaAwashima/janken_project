@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2週目 | アルゴリズムじゃんけん</title>
+  <style>
+    :root {
+      --bg: #f1f8ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbeafe;
+      --pri: #0f766e;
+      --sec: #0284c7;
+      --warm: #f59e0b;
+      --header: #082f49;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 85% 0%, #dbeafe 0%, transparent 42%),
+        radial-gradient(circle at 0% 90%, #ccfbf1 0%, transparent 40%),
+        var(--bg);
+      min-height: 100dvh;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--header), #0c4a6e 70%, #155e75);
+      color: #fff;
+      padding: 1rem 1rem 1.2rem;
+    }
+
+    .head-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .back {
+      color: rgba(255,255,255,0.78);
+      text-decoration: none;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin-top: 0.7rem;
+      font-size: clamp(1.45rem, 5vw, 2rem);
+      line-height: 1.25;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      margin-top: 0.55rem;
+      max-width: 720px;
+      color: rgba(255,255,255,0.86);
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1rem 1rem 3rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 6px 18px rgba(12, 74, 110, 0.08);
+    }
+
+    .sec-title {
+      font-size: 1rem;
+      font-weight: 900;
+      margin-bottom: 0.65rem;
+    }
+
+    .small { color: var(--muted); font-size: 0.86rem; }
+
+    .rule-list {
+      list-style: none;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .rule-list li {
+      border-left: 4px solid #93c5fd;
+      padding-left: 0.6rem;
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 0.48rem;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+
+    .flow p {
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      background: #f8fbff;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      margin-top: 0.2rem;
+    }
+
+    .mode-card {
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 0.9rem;
+      background: #fff;
+    }
+
+    .mode-card h3 {
+      font-size: 1.02rem;
+      font-weight: 900;
+      margin-bottom: 0.35rem;
+    }
+
+    .mode-card p {
+      color: #475569;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 0.7rem;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      margin-bottom: 0.5rem;
+      background: #ecfeff;
+      color: #0f766e;
+      border: 1px solid #99f6e4;
+    }
+
+    .mode-card.local .tag {
+      background: #eff6ff;
+      color: #0369a1;
+      border-color: #bfdbfe;
+    }
+
+    .btn {
+      display: inline-block;
+      border-radius: 10px;
+      padding: 0.62rem 0.92rem;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .btn.room {
+      background: var(--pri);
+      color: #fff;
+    }
+
+    .btn.local {
+      background: var(--sec);
+      color: #fff;
+    }
+
+    .tips {
+      border-left: 4px solid var(--warm);
+      background: #fffaf0;
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: #78350f;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.78rem;
+      padding: 0.9rem 1rem 1.6rem;
+    }
+
+    @media (min-width: 760px) {
+      .mode-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head-wrap">
+      <a class="back" href="../index.html">← トップへ戻る</a>
+      <h1>2週目: アルゴリズムじゃんけん</h1>
+      <p class="lead">10手先までの「出し方ルール」を設計して戦う、作戦型じゃんけんです。条件分岐（もし〜なら）を使って、予測と改善をくり返します。</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 class="sec-title">どんなゲーム？</h2>
+      <ul class="rule-list">
+        <li>グー・チョキ・パーを各4枚ずつ使い、10手分のアルゴリズムを作る。</li>
+        <li>1手ごとに「単体」か「条件分岐」を選び、出す手を決める。</li>
+        <li>勝ち2点・あいこ1点・負け0点で合計点を競う。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="sec-title">進め方（授業での流れ）</h2>
+      <div class="flow">
+        <p>1. チームで10手分の作戦を相談して入力する</p>
+        <p>2. バトルを1手ずつ公開し、勝敗の理由を確認する</p>
+        <p>3. 結果をふり返り、次の作戦に改善する</p>
+      </div>
+      <p class="small" style="margin-top:0.55rem;">条件分岐を増やしすぎると手札を消費しやすいので、バランス設計がポイントです。</p>
+    </section>
+
+    <section class="card">
+      <h2 class="sec-title">遊び方を選ぶ</h2>
+      <div class="mode-grid">
+        <article class="mode-card room">
+          <span class="tag">MULTI DEVICE</span>
+          <h3>通信ルーム版</h3>
+          <p>複数端末で同じルームに入り、ホストが進行するスタイルです。教室全体での対戦や発表に向いています。</p>
+          <a class="btn room" href="online.html">通信ルームへ進む</a>
+        </article>
+
+        <article class="mode-card local">
+          <span class="tag">SINGLE DEVICE</span>
+          <h3>ローカル対戦版</h3>
+          <p>1台の端末でA/Bチームの作戦を入力し、そのまま対戦表示まで進められます。短時間の実施に便利です。</p>
+          <a class="btn local" href="battle.html">ローカル対戦へ進む</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="tips">
+      通信ルーム版は Firebase 設定が必要です。未設定の場合は、まずローカル対戦版でルール理解と試運転を行うのがおすすめです。
+    </section>
+  </main>
+
+  <footer>じゃんけんプロジェクト / Week 2</footer>
+</body>
+</html>
