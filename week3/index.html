@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3週目 | アルティメットじゃんけん</title>
+  <style>
+    :root {
+      --bg: #fff7ed;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #fed7aa;
+      --headA: #3f1d0a;
+      --headB: #9a3412;
+      --accent: #ea580c;
+      --accent2: #0f766e;
+      --warn: #92400e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, #ffedd5 0%, transparent 38%),
+        radial-gradient(circle at 90% 100%, #fde68a 0%, transparent 35%),
+        var(--bg);
+      min-height: 100dvh;
+    }
+
+    header {
+      background: linear-gradient(130deg, var(--headA), var(--headB));
+      color: #fff;
+      padding: 1rem 1rem 1.25rem;
+    }
+
+    .head-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .back {
+      color: rgba(255, 255, 255, 0.78);
+      text-decoration: none;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin-top: 0.65rem;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 900;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      margin-top: 0.5rem;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 740px;
+      font-size: 0.94rem;
+      line-height: 1.65;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1rem 1rem 3rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 5px 16px rgba(124, 45, 18, 0.08);
+    }
+
+    .sec-title {
+      font-size: 1rem;
+      font-weight: 900;
+      margin-bottom: 0.65rem;
+      color: #7c2d12;
+    }
+
+    .mini {
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .rule-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.7rem;
+    }
+
+    .rule {
+      border: 1px solid #fdba74;
+      border-radius: 12px;
+      padding: 0.7rem;
+      background: #fffaf5;
+    }
+
+    .rule h3 {
+      font-size: 0.94rem;
+      font-weight: 900;
+      margin-bottom: 0.35rem;
+    }
+
+    .rule p, .rule li {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #374151;
+    }
+
+    .rule ul {
+      margin-left: 1rem;
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 0.48rem;
+    }
+
+    .flow p {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      border: 1px solid #fed7aa;
+      border-radius: 10px;
+      padding: 0.55rem 0.65rem;
+      background: #fffaf5;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.14rem 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #7c2d12;
+      background: #ffedd5;
+      border: 1px solid #fdba74;
+      margin-bottom: 0.48rem;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin-top: 0.35rem;
+    }
+
+    .matrix th, .matrix td {
+      border: 1px solid #fed7aa;
+      padding: 0.45rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .matrix th {
+      background: #fff0e0;
+      color: #7c2d12;
+      font-weight: 800;
+      white-space: nowrap;
+      width: 30%;
+    }
+
+    .note {
+      border-left: 4px solid #f59e0b;
+      border-radius: 8px;
+      background: #fffbeb;
+      color: var(--warn);
+      font-size: 0.86rem;
+      line-height: 1.6;
+      padding: 0.72rem;
+    }
+
+    .link-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 0.55rem;
+    }
+
+    .btn {
+      display: inline-block;
+      border-radius: 10px;
+      padding: 0.58rem 0.9rem;
+      font-size: 0.86rem;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .btn.main {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn.sub {
+      background: var(--accent2);
+      color: #fff;
+    }
+
+    footer {
+      text-align: center;
+      color: #6b7280;
+      font-size: 0.78rem;
+      padding: 0.9rem 1rem 1.6rem;
+    }
+
+    @media (min-width: 760px) {
+      .rule-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head-wrap">
+      <a class="back" href="../index.html">← トップへ戻る</a>
+      <h1>3週目: アルティメットじゃんけん（構想）</h1>
+      <p class="lead">じゃんけんに戦略・判断・心理戦を持ち込む競技版。ターンごとにレギュレーションが変化し、先に20ポイントへ到達したプレイヤーが勝者です。</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 class="sec-title">コンセプト</h2>
+      <div class="flow">
+        <p>1. 通常のじゃんけんで勝敗を決め、得点を積み上げる。</p>
+        <p>2. 毎ターンのレギュレーションで読み合いを発生させる。</p>
+        <p>3. 高得点を狙うか、失点回避を優先するかを選ぶ。</p>
+      </div>
+      <p class="mini" style="margin-top:0.55rem;">ゴールは運だけでなく、期待値の判断と相手の心理を読むこと。</p>
+    </section>
+
+    <section class="card">
+      <h2 class="sec-title">確定レギュレーション</h2>
+      <div class="rule-grid">
+        <article class="rule">
+          <span class="pill">WIN CONDITION</span>
+          <h3>勝利条件</h3>
+          <ul>
+            <li>先に20ポイントへ到達した側の勝利。</li>
+            <li>同ターンで両者20以上の場合は高得点側が勝利。</li>
+            <li>同点ならサドンデス1本で決着。</li>
+          </ul>
+        </article>
+
+        <article class="rule">
+          <span class="pill">BASE POINT</span>
+          <h3>通常得点</h3>
+          <ul>
+            <li>勝ち: 2点</li>
+            <li>あいこ: 1点</li>
+            <li>負け: 0点</li>
+          </ul>
+        </article>
+
+        <article class="rule">
+          <span class="pill">BONUS RULE</span>
+          <h3>リベンジ</h3>
+          <ul>
+            <li>前ターンで負けたプレイヤーが対象。</li>
+            <li>そのターンで勝利したら追加で +2点。</li>
+            <li>あいこ・敗北時は加点なし。</li>
+          </ul>
+        </article>
+
+        <article class="rule">
+          <span class="pill">SECRET RULE</span>
+          <h3>クライマックス</h3>
+          <ul>
+            <li>どちらかが15点以上で毎ターン発動抽選。</li>
+            <li>発動時はシークレット効果として +1点。</li>
+            <li>発動有無は結果表示時に開示。</li>
+          </ul>
+        </article>
+      </div>
+      <p class="mini" style="margin-top:0.6rem;">1ターンの追加ボーナス上限は +5。表示は「基本点 + ボーナス内訳 = 獲得点」で統一する。</p>
+    </section>
+
+    <section class="card">
+      <h2 class="sec-title">通信対戦の実装方針</h2>
+      <table class="matrix">
+        <tr>
+          <th>対戦モデル</th>
+          <td>Week2と同じ通信対戦UIを継承。ルーム作成、参加、同期表示の流れで実装する。</td>
+        </tr>
+        <tr>
+          <th>マッチング</th>
+          <td>待機キューから2人を自動でペアにし、対戦ルームを生成する。</td>
+        </tr>
+        <tr>
+          <th>同期内容</th>
+          <td>手の提出、レギュレーション状態、得点、勝敗ログをリアルタイムで共有する。</td>
+        </tr>
+        <tr>
+          <th>進行管理</th>
+          <td>ホスト端末依存なし。状態遷移を共通ルールで管理して切断時も再接続できるようにする。</td>
+        </tr>
+      </table>
+      <div class="link-row">
+        <a class="btn main" href="../week2/online.html">Week2 通信ルーム版を確認</a>
+        <a class="btn sub" href="../week2/index.html">Week2 紹介ページへ</a>
+      </div>
+    </section>
+
+    <section class="note">
+      実装フェーズでは、GitHub Pagesをフロント配信として利用しつつ、マッチングと対戦同期は外部リアルタイム基盤で担当する構成を想定しています。
+    </section>
+  </main>
+
+  <footer>じゃんけんプロジェクト / Week 3 Planning</footer>
+</body>
+</html>
