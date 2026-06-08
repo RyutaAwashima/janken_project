@@ -243,6 +243,67 @@
       border-radius: 7px;
     }
 
+    .type-switch {
+      display: inline-flex;
+      gap: 0.24rem;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 0.15rem;
+    }
+
+    .type-btn {
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .type-btn.active {
+      background: #1f2937;
+      color: #fff;
+    }
+
+    .type-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .hand-picks {
+      display: inline-flex;
+      gap: 0.22rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hand-btn {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      border-radius: 8px;
+      padding: 0.16rem 0.36rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      min-width: 2.2rem;
+      color: #334155;
+    }
+
+    .hand-btn.active {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      color: #312e81;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.14);
+    }
+
+    .cell-off {
+      color: #9ca3af;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
     .battle-head {
       display: flex;
       align-items: center;
@@ -1030,33 +1091,31 @@
     }
 
     tbody.innerHTML = localAlgo.map((st, i) => {
-      const condDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
-      const thenDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
-      const elseDis = st.type !== 'I' || i === 0 ? 'disabled' : '';
-      const handDis = st.type !== 'S' ? 'disabled' : '';
+      const isSingle = st.type === 'S' || i === 0;
 
-      const typeSel = `<select data-i="${i}" data-k="type">
-        <option value="S" ${st.type === 'S' ? 'selected' : ''}>単体</option>
-        <option value="I" ${(st.type === 'I' && i !== 0) ? 'selected' : ''} ${i === 0 ? 'disabled' : ''}>条件分岐</option>
-      </select>`;
+      const typeSwitch = `<div class="type-switch">
+        <button type="button" class="type-btn ${isSingle ? 'active' : ''}" data-i="${i}" data-k="type" data-v="S">単体</button>
+        <button type="button" class="type-btn ${!isSingle ? 'active' : ''}" data-i="${i}" data-k="type" data-v="I" ${i === 0 ? 'disabled' : ''}>条件</button>
+      </div>`;
 
-      const condSel = `<select data-i="${i}" data-k="cond" ${condDis}>
-        <option value="">-</option>
-        ${CONDS.map(c => `<option value="${c}" ${st.cond === c ? 'selected' : ''}>${CN[c]}</option>`).join('')}
-      </select>`;
+      const condSel = !isSingle
+        ? `<select data-i="${i}" data-k="cond">
+            <option value="">-</option>
+            ${CONDS.map(c => `<option value="${c}" ${st.cond === c ? 'selected' : ''}>${CN[c]}</option>`).join('')}
+          </select>`
+        : '<span class="cell-off">-</span>';
 
-      const hSel = (k, dis) => `<select data-i="${i}" data-k="${k}" ${dis}>
-        <option value="">-</option>
-        ${HANDS.map(h => `<option value="${h}" ${st[k] === h ? 'selected' : ''}>${HE[h]} ${HN[h]}</option>`).join('')}
-      </select>`;
+      const handBtns = (k) => `<div class="hand-picks" data-i="${i}" data-k="${k}">
+        ${HANDS.map(h => `<button type="button" class="hand-btn ${st[k] === h ? 'active' : ''}" data-i="${i}" data-k="${k}" data-v="${h}">${HE[h]}</button>`).join('')}
+      </div>`;
 
       return `<tr>
         <td>${i + 1}</td>
-        <td>${typeSel}</td>
+        <td>${typeSwitch}</td>
         <td>${condSel}</td>
-        <td>${hSel('then', thenDis)}</td>
-        <td>${hSel('els', elseDis)}</td>
-        <td>${hSel('hand', handDis)}</td>
+        <td>${!isSingle ? handBtns('then') : '<span class="cell-off">-</span>'}</td>
+        <td>${!isSingle ? handBtns('els') : '<span class="cell-off">-</span>'}</td>
+        <td>${isSingle ? handBtns('hand') : '<span class="cell-off">-</span>'}</td>
       </tr>`;
     }).join('');
 
@@ -1065,15 +1124,31 @@
         const i = Number(s.dataset.i);
         const k = s.dataset.k;
         localAlgo[i][k] = s.value;
+        renderEditor();
+        syncLocalValidation();
+      });
+    });
+
+    tbody.querySelectorAll('button[data-k]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (b.disabled) return;
+        const i = Number(b.dataset.i);
+        const k = b.dataset.k;
+        const v = b.dataset.v;
+
         if (k === 'type') {
-          if (s.value === 'S') {
+          localAlgo[i].type = v;
+          if (v === 'S') {
             localAlgo[i].cond = '';
             localAlgo[i].then = '';
             localAlgo[i].els = '';
           } else {
             localAlgo[i].hand = '';
           }
+        } else {
+          localAlgo[i][k] = localAlgo[i][k] === v ? '' : v;
         }
+
         renderEditor();
         syncLocalValidation();
       });
