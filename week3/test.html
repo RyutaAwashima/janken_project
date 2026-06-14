@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アルティメットじゃんけん v2 | テスト</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #f59e0b;
+      --p1: #3b82f6;
+      --p2: #ef4444;
+      --green: #10b981;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+    }
+    header {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.7rem;
+    }
+    header a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.82rem; }
+    header h1 { font-size: 1.05rem; font-weight: 900; flex: 1; }
+    .badge { font-size: 0.68rem; background: var(--accent); color: #000; padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 800; }
+
+    .container { max-width: 540px; margin: 0 auto; padding: 1rem; }
+
+    /* Mode select */
+    .mode-select {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.2rem; text-align: center;
+    }
+    .mode-select h2 { font-size: 1rem; margin-bottom: 0.8rem; }
+    .mode-btns { display: flex; gap: 0.6rem; justify-content: center; }
+    .mode-btn {
+      padding: 0.7rem 1.4rem; border: 2px solid var(--border); border-radius: 12px;
+      background: transparent; color: var(--text); font-family: inherit;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.12s;
+    }
+    .mode-btn:hover { border-color: var(--accent); }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border-radius: 16px;
+      padding: 1rem 1.25rem; margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+    }
+    .sc-side { text-align: center; flex: 1; }
+    .sc-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; }
+    .sc-val { font-size: 2.4rem; font-weight: 900; line-height: 1.1; }
+    .sc-val.p1c { color: var(--p1); }
+    .sc-val.p2c { color: var(--p2); }
+    .sc-sep { font-size: 1.2rem; color: var(--muted); }
+    .sets-info { text-align: center; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem; font-weight: 700; }
+
+    /* Values display */
+    .values-display {
+      background: linear-gradient(135deg, #312e81, #1e1b4b);
+      border: 2px solid var(--accent); border-radius: 14px;
+      padding: 0.9rem 1rem; margin-bottom: 0.75rem; text-align: center;
+    }
+    .values-display.sd {
+      border-color: var(--p2);
+      background: linear-gradient(135deg, #450a0a, #1e1b4b);
+    }
+    .values-title { font-size: 0.72rem; color: var(--accent); font-weight: 800; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+    .values-row { display: flex; justify-content: center; gap: 1.2rem; }
+    .val-item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+    .val-emoji { font-size: 1.6rem; }
+    .val-num { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+    .sd-label { font-size: 1.1rem; font-weight: 900; color: var(--p2); }
+
+    /* Hand buttons */
+    .hand-section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
+    }
+    .hand-title { font-size: 0.78rem; color: var(--muted); font-weight: 700; margin-bottom: 0.6rem; }
+    .hand-row { display: flex; gap: 0.6rem; }
+    .hand-btn {
+      flex: 1; padding: 0.9rem 0.3rem;
+      border: 2px solid var(--border); border-radius: 14px;
+      background: transparent; color: var(--text);
+      font-family: inherit; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+      transition: all 0.12s; position: relative;
+    }
+    .hand-btn:hover { border-color: var(--accent); background: rgba(245,158,11,0.08); }
+    .hand-btn:active { transform: scale(0.95); }
+    .hand-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .hand-btn .emoji { font-size: 2rem; }
+    .hand-btn .lbl { font-size: 0.72rem; font-weight: 700; }
+    .hand-btn .val-badge {
+      position: absolute; bottom: -10px; left: -10px;
+      background: var(--accent); color: #000;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      transition: all 0.15s;
+    }
+    .hand-btn .val-badge[data-val="1"] {
+      width: 30px; height: 30px; font-size: 1.04rem;
+    }
+    .hand-btn .val-badge[data-val="2"] {
+      width: 34px; height: 34px; font-size: 1.2rem;
+    }
+    .hand-btn .val-badge[data-val="3"] {
+      width: 40px; height: 40px; font-size: 1.44rem;
+    }
+    .hand-btn.best { border-color: var(--green); }
+    .hand-btn.worst { border-color: var(--p2); }
+
+    /* Result */
+    .result-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
+      display: none;
+    }
+    .result-panel.show { display: block; animation: fadein 0.2s ease-out; }
+    @keyframes fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .result-hands { display: flex; justify-content: center; align-items: center; gap: 1rem; font-size: 2.8rem; margin-bottom: 0.5rem; overflow: visible; }
+    .result-hand-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .result-hand-p1, .result-hand-p2 { display: inline-block; opacity: 0; }
+    .result-hand-p1.animate { animation: slideFromLeft 0.3s ease-out forwards; }
+    .result-hand-p2.animate { animation: slideFromRight 0.3s ease-out forwards; }
+    @keyframes slideFromLeft { from { opacity:0; transform:translateX(-80px) scale(1.4); } to { opacity:1; transform:translateX(0) scale(1); } }
+    @keyframes slideFromRight { from { opacity:0; transform:translateX(80px) scale(1.4); } to { opacity:1; transform:translateX(0) scale(1); } }
+    .pts-pop {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      font-size: 1.4rem; font-weight: 900;
+      opacity: 0; pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+    .pts-pop.p1-pop { color: var(--p1); right: 100%; margin-right: 6px; }
+    .pts-pop.p2-pop { color: var(--p2); left: 100%; margin-left: 6px; }
+    .pts-pop.pop { animation: ptsPop 0.6s ease-out forwards; }
+    @keyframes ptsPop {
+      0% { opacity: 0; transform: translateY(-50%) scale(0.5); }
+      40% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+      100% { opacity: 1; transform: translateY(-50%) scale(1); }
+    }
+    .result-vs { font-size: 0.9rem; color: var(--muted); font-weight: 800; }
+    .result-text { opacity: 0; transition: opacity 0.2s; }
+    .result-text.reveal { opacity: 1; }
+    .result-detail { opacity: 0; transition: opacity 0.25s; font-size: 1.3rem; font-weight: 900; margin-top: 0.4rem; }
+    .result-detail.reveal { opacity: 1; }
+    .pts-you { color: var(--p1); }
+    .pts-cpu { color: var(--p2); }
+    .pts-sep { color: var(--muted); margin: 0 0.3rem; }
+    .result-text { text-align: center; font-size: 1.2rem; font-weight: 900; margin-bottom: 0.4rem; }
+    .result-text.win { color: var(--p1); }
+    .result-text.lose { color: var(--p2); }
+    .result-text.draw { color: var(--accent); }
+    .result-detail { font-size: 0.85rem; color: var(--muted); text-align: center; line-height: 1.6; }
+
+    .next-btn {
+      display: block; width: 100%; padding: 0.85rem;
+      border: none; border-radius: 12px;
+      background: var(--accent); color: #000;
+      font-family: inherit; font-size: 0.95rem; font-weight: 800;
+      cursor: pointer; transition: transform 0.1s;
+    }
+    .next-btn:active { transform: scale(0.97); }
+
+    /* History */
+    .history { margin-top: 0.75rem; }
+    .history-title { font-size: 0.78rem; color: var(--muted); font-weight: 700; margin-bottom: 0.4rem; }
+    .history-list { display: grid; gap: 0.3rem; max-height: 180px; overflow-y: auto; }
+    .hist-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: rgba(255,255,255,0.03); border-radius: 8px;
+      padding: 0.35rem 0.6rem; font-size: 0.78rem;
+    }
+    .hist-turn { color: var(--muted); min-width: 2rem; font-weight: 700; }
+    .hist-hands { flex: 1; }
+    .hist-pts { font-weight: 700; }
+    .hist-pts .p1p { color: var(--p1); }
+    .hist-pts .p2p { color: var(--p2); }
+
+    /* Game over / Set over */
+    .overlay {
+      text-align: center; padding: 2rem 1rem; display: none;
+    }
+    .overlay.show { display: block; animation: fadein 0.25s ease-out; }
+    .overlay .icon { font-size: 3.5rem; }
+    .overlay .msg { font-size: 1.5rem; font-weight: 900; margin: 0.5rem 0; }
+    .overlay .msg.p1w { color: var(--p1); }
+    .overlay .msg.p2w { color: var(--p2); }
+    .overlay .sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 1rem; }
+    .ov-btn {
+      padding: 0.7rem 1.8rem; border: none; border-radius: 12px;
+      background: var(--accent); color: #000;
+      font-family: inherit; font-size: 0.92rem; font-weight: 800;
+      cursor: pointer; margin: 0.3rem;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html">← 3週目</a>
+    <h1>アルティメットじゃんけん</h1>
+    <span class="badge">TEST vs CPU</span>
+  </header>
+
+  <div class="container">
+    <!-- Mode Select -->
+    <div class="mode-select" id="mode-select">
+      <h2>対戦形式を選択</h2>
+      <div class="mode-btns">
+        <button class="mode-btn" onclick="startGame(1)">BO1<br><small style="color:var(--muted);">インスタント</small></button>
+        <button class="mode-btn" onclick="startGame(3)">BO3<br><small style="color:var(--muted);">しっかり勝負</small></button>
+      </div>
+    </div>
+
+    <!-- Game Area -->
+    <div id="game-area" class="hidden">
+      <!-- Sets info (BO3 only) -->
+      <div class="sets-info" id="sets-info"></div>
+
+      <!-- Scoreboard -->
+      <div class="scoreboard">
+        <div class="sc-side">
+          <div class="sc-label">YOU</div>
+          <div class="sc-val p1c" id="score-p1">0</div>
+        </div>
+        <div class="sc-sep">:</div>
+        <div class="sc-side">
+          <div class="sc-label">CPU</div>
+          <div class="sc-val p2c" id="score-p2">0</div>
+        </div>
+      </div>
+
+      <!-- Values -->
+      <div class="values-display" id="values-display">
+        <div class="values-title" id="values-title">TODAY'S VALUES</div>
+        <div class="values-row" id="values-row"></div>
+      </div>
+
+      <!-- Hand buttons -->
+      <div class="hand-section" id="hand-section">
+        <div class="hand-title">手を選んでください</div>
+        <div class="hand-row" id="hand-row">
+          <button class="hand-btn" data-hand="0">
+            <span class="val-badge" id="vb-0"></span>
+            <span class="emoji">✊</span>
+            <span class="lbl">グー</span>
+          </button>
+          <button class="hand-btn" data-hand="1">
+            <span class="val-badge" id="vb-1"></span>
+            <span class="emoji">✌️</span>
+            <span class="lbl">チョキ</span>
+          </button>
+          <button class="hand-btn" data-hand="2">
+            <span class="val-badge" id="vb-2"></span>
+            <span class="emoji">✋</span>
+            <span class="lbl">パー</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="result-panel" id="result-panel">
+        <div class="result-hands">
+          <span class="result-hand-wrap"><span class="result-hand-p1" id="res-h1"></span><span class="pts-pop p1-pop" id="pop-p1"></span></span>
+          <span class="result-vs">VS</span>
+          <span class="result-hand-wrap"><span class="result-hand-p2" id="res-h2"></span><span class="pts-pop p2-pop" id="pop-p2"></span></span>
+        </div>
+        <div class="result-text" id="res-text"></div>
+        <div class="result-detail" id="res-detail"></div>
+      </div>
+
+      <!-- Next -->
+      <button class="next-btn hidden" id="next-btn" onclick="nextTurn()">次のターン →</button>
+
+      <!-- History -->
+      <div class="history">
+        <div class="history-title">対戦ログ</div>
+        <div class="history-list" id="history-list"></div>
+      </div>
+
+      <!-- Set Over -->
+      <div class="overlay" id="set-over">
+        <div class="icon" id="so-icon"></div>
+        <div class="msg" id="so-msg"></div>
+        <div class="sub" id="so-sub"></div>
+        <button class="ov-btn" id="so-btn" onclick="goNextSet()">次のセットへ</button>
+      </div>
+
+      <!-- Match Over -->
+      <div class="overlay" id="match-over">
+        <div class="icon" id="mo-icon"></div>
+        <div class="msg" id="mo-msg"></div>
+        <div class="sub" id="mo-sub"></div>
+        <button class="ov-btn" onclick="backToMenu()">メニューに戻る</button>
+        <button class="ov-btn" onclick="rematch()">リマッチ</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script>
+    let game;
+    const $ = id => document.getElementById(id);
+
+    function startGame(bestOf) {
+      game = new UltimateJankenGame(bestOf);
+      $('mode-select').classList.add('hidden');
+      $('game-area').classList.remove('hidden');
+      $('match-over').classList.remove('show');
+      $('set-over').classList.remove('show');
+      updateSetsInfo();
+      beginTurn();
+    }
+
+    function updateSetsInfo() {
+      if (game.bestOf > 1) {
+        $('sets-info').textContent = `SET: YOU ${game.sets.p1} - ${game.sets.p2} CPU (BO${game.bestOf})`;
+        $('sets-info').style.display = '';
+      } else {
+        $('sets-info').style.display = 'none';
+      }
+    }
+
+    function beginTurn() {
+      const info = game.startTurn();
+      $('score-p1').textContent = info.scores.p1;
+      $('score-p2').textContent = info.scores.p2;
+
+      const vd = $('values-display');
+      const vr = $('values-row');
+
+      if (info.suddenDeath) {
+        vd.classList.add('sd');
+        $('values-title').textContent = 'SUDDEN DEATH';
+        vr.innerHTML = '<div class="sd-label">普通のじゃんけん！勝った方が勝ち</div>';
+        // Hide value badges
+        for (let i = 0; i < 3; i++) $('vb-' + i).style.display = 'none';
+        // Remove highlights
+        document.querySelectorAll('.hand-btn').forEach(b => b.classList.remove('best', 'worst'));
+      } else {
+        vd.classList.remove('sd');
+        $('values-title').textContent = `TURN ${info.turn} - VALUES`;
+        vr.innerHTML = info.values.map((v, i) =>
+          `<div class="val-item"><span class="val-emoji">${HAND_EMOJI[i]}</span><span class="val-num">${v}</span></div>`
+        ).join('');
+
+        // Value badges on buttons
+        for (let i = 0; i < 3; i++) {
+          const badge = $('vb-' + i);
+          badge.textContent = info.values[i];
+          badge.setAttribute('data-val', info.values[i]);
+          badge.style.display = '';
+        }
+
+        // Highlight best/worst
+        const maxVal = Math.max(...info.values);
+        const minVal = Math.min(...info.values);
+        document.querySelectorAll('.hand-btn').forEach(btn => {
+          const h = parseInt(btn.dataset.hand);
+          btn.classList.remove('best', 'worst');
+          if (info.values[h] === maxVal) btn.classList.add('best');
+          if (info.values[h] === minVal) btn.classList.add('worst');
+        });
+      }
+
+      // Enable buttons
+      document.querySelectorAll('.hand-btn').forEach(btn => btn.disabled = false);
+      $('hand-section').classList.remove('hidden');
+      $('result-panel').classList.remove('show');
+      $('next-btn').classList.add('hidden');
+    }
+
+    function selectHand(h1) {
+      document.querySelectorAll('.hand-btn').forEach(btn => btn.disabled = true);
+      const h2 = cpuChoose(game.values, game.suddenDeath);
+      const res = game.submitHands(h1, h2);
+
+      // Reset animation classes
+      const rh1 = $('res-h1');
+      const rh2 = $('res-h2');
+      rh1.classList.remove('animate');
+      rh2.classList.remove('animate');
+      $('res-text').classList.remove('reveal');
+      $('res-detail').classList.remove('reveal');
+      $('pop-p1').classList.remove('pop'); $('pop-p1').textContent = '';
+      $('pop-p2').classList.remove('pop'); $('pop-p2').textContent = '';
+
+      rh1.textContent = HAND_EMOJI[h1];
+      rh2.textContent = HAND_EMOJI[h2];
+
+      // Show panel and trigger slide-in: left first, right after 250ms
+      $('result-panel').classList.add('show');
+      requestAnimationFrame(() => {
+        rh1.classList.add('animate');
+        setTimeout(() => rh2.classList.add('animate'), 250);
+      });
+
+      // Pop points on the winning hand after both slide in (600ms)
+      setTimeout(() => {
+        if (!res.suddenDeath) {
+          if (res.result === 1 || res.result === 0) {
+            $('pop-p1').textContent = '+' + res.p1Pts;
+            $('pop-p1').classList.add('pop');
+          }
+          if (res.result === -1 || res.result === 0) {
+            $('pop-p2').textContent = '+' + res.p2Pts;
+            $('pop-p2').classList.add('pop');
+          }
+        }
+      }, 600);
+
+      // Hit-stop: reveal result text after 1300ms
+      setTimeout(() => {
+        $('score-p1').textContent = res.scores.p1;
+        $('score-p2').textContent = res.scores.p2;
+
+        let resLabel, resClass;
+        if (res.result === 1) { resLabel = 'WIN!'; resClass = 'win'; }
+        else if (res.result === -1) { resLabel = 'LOSE'; resClass = 'lose'; }
+        else { resLabel = 'DRAW'; resClass = 'draw'; }
+
+        $('res-text').textContent = resLabel;
+        $('res-text').className = 'result-text ' + resClass + ' reveal';
+
+        if (res.suddenDeath) {
+          $('res-detail').textContent = res.result === 0 ? 'あいこ！もう一度' : '';
+        } else {
+          $('res-detail').innerHTML = `<span class="pts-you">YOU +${res.p1Pts}</span><span class="pts-sep">/</span><span class="pts-cpu">CPU +${res.p2Pts}</span>`;
+        }
+        $('res-detail').classList.add('reveal');
+
+        // History
+        addHistory(res);
+
+        if (res.setFinished) {
+          setTimeout(() => showSetOver(res), 600);
+        } else {
+          $('next-btn').classList.remove('hidden');
+        }
+      }, 1300);
+    }
+
+    function addHistory(res) {
+      const row = document.createElement('div');
+      row.className = 'hist-row';
+      const ptsText = res.suddenDeath ? (res.result === 1 ? 'WIN' : res.result === -1 ? 'LOSE' : 'DRAW') : `+${res.p1Pts} / +${res.p2Pts}`;
+      row.innerHTML = `
+        <span class="hist-turn">T${game.turn}</span>
+        <span class="hist-hands">${HAND_EMOJI[res.h1]} vs ${HAND_EMOJI[res.h2]}</span>
+        <span class="hist-pts"><span class="p1p">${res.p1Pts !== undefined ? '+' + res.p1Pts : ''}</span> / <span class="p2p">${res.p2Pts !== undefined ? '+' + res.p2Pts : ''}</span></span>
+      `;
+      $('history-list').prepend(row);
+    }
+
+    function nextTurn() {
+      beginTurn();
+    }
+
+    function showSetOver(res) {
+      $('hand-section').classList.add('hidden');
+      $('next-btn').classList.add('hidden');
+
+      if (res.matchFinished) {
+        showMatchOver();
+        return;
+      }
+
+      const so = $('set-over');
+      so.classList.add('show');
+      if (res.setWinner === 'p1') {
+        $('so-icon').textContent = '✨';
+        $('so-msg').textContent = 'SET WIN!';
+        $('so-msg').className = 'msg p1w';
+      } else {
+        $('so-icon').textContent = '😤';
+        $('so-msg').textContent = 'SET LOSE';
+        $('so-msg').className = 'msg p2w';
+      }
+      $('so-sub').textContent = `${game.scores.p1} - ${game.scores.p2}（${game.turn}ターン）`;
+      updateSetsInfo();
+    }
+
+    function showMatchOver() {
+      $('hand-section').classList.add('hidden');
+      $('next-btn').classList.add('hidden');
+      $('set-over').classList.remove('show');
+
+      const mo = $('match-over');
+      mo.classList.add('show');
+      if (game.matchWinner === 'p1') {
+        $('mo-icon').textContent = '🏆';
+        $('mo-msg').textContent = 'YOU WIN!';
+        $('mo-msg').className = 'msg p1w';
+      } else {
+        $('mo-icon').textContent = '💀';
+        $('mo-msg').textContent = 'YOU LOSE';
+        $('mo-msg').className = 'msg p2w';
+      }
+      const sub = game.bestOf > 1 ? `SETS: ${game.sets.p1} - ${game.sets.p2}` : `${game.scores.p1} - ${game.scores.p2}（${game.turn}ターン）`;
+      $('mo-sub').textContent = sub;
+    }
+
+    function goNextSet() {
+      $('set-over').classList.remove('show');
+      $('history-list').innerHTML = '';
+      game.nextSet();
+      updateSetsInfo();
+      beginTurn();
+    }
+
+    function backToMenu() {
+      $('game-area').classList.add('hidden');
+      $('match-over').classList.remove('show');
+      $('set-over').classList.remove('show');
+      $('history-list').innerHTML = '';
+      $('mode-select').classList.remove('hidden');
+    }
+
+    function rematch() {
+      const bo = game.bestOf;
+      $('match-over').classList.remove('show');
+      $('set-over').classList.remove('show');
+      $('history-list').innerHTML = '';
+      startGame(bo);
+    }
+
+    // Event listeners
+    document.querySelectorAll('.hand-btn').forEach(btn => {
+      btn.addEventListener('click', () => selectHand(parseInt(btn.dataset.hand)));
+    });
+  </script>
+</body>
+</html>

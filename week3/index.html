@@ -173,6 +173,28 @@
       width: 30%;
     }
 
+    .card-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin-top: 0.45rem;
+    }
+
+    .card-table th, .card-table td {
+      border: 1px solid #fed7aa;
+      padding: 0.45rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .card-table th {
+      background: #fff0e0;
+      color: #7c2d12;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
     .note {
       border-left: 4px solid #f59e0b;
       border-radius: 8px;
@@ -265,27 +287,62 @@
             <li>負け: 0点</li>
           </ul>
         </article>
-
-        <article class="rule">
-          <span class="pill">BONUS RULE</span>
-          <h3>リベンジ</h3>
-          <ul>
-            <li>前ターンで負けたプレイヤーが対象。</li>
-            <li>そのターンで勝利したら追加で +2点。</li>
-            <li>あいこ・敗北時は加点なし。</li>
-          </ul>
-        </article>
-
-        <article class="rule">
-          <span class="pill">SECRET RULE</span>
-          <h3>クライマックス</h3>
-          <ul>
-            <li>どちらかが15点以上で毎ターン発動抽選。</li>
-            <li>発動時はシークレット効果として +1点。</li>
-            <li>発動有無は結果表示時に開示。</li>
-          </ul>
-        </article>
       </div>
+
+      <span class="pill" style="margin-top:0.7rem;">REGULATION CARDS</span>
+      <h3 style="font-size:0.95rem; margin-bottom:0.35rem; color:#7c2d12;">採用カード一覧（9種）</h3>
+      <table class="card-table">
+        <tr>
+          <th>カード名</th>
+          <th>効果</th>
+          <th>メモ</th>
+        </tr>
+        <tr>
+          <td>ボーナスハンド: グー</td>
+          <td>グーで勝利したら追加得点。</td>
+          <td>読み合いを作る主軸。</td>
+        </tr>
+        <tr>
+          <td>ボーナスハンド: チョキ</td>
+          <td>チョキで勝利したら追加得点。</td>
+          <td>手を偏らせる圧力。</td>
+        </tr>
+        <tr>
+          <td>ボーナスハンド: パー</td>
+          <td>パーで勝利したら追加得点。</td>
+          <td>逆読みを誘発。</td>
+        </tr>
+        <tr>
+          <td>逆風: グー</td>
+          <td>グーで負けると追加失点。</td>
+          <td>リスク管理用カード。</td>
+        </tr>
+        <tr>
+          <td>逆風: チョキ</td>
+          <td>チョキで負けると追加失点。</td>
+          <td>守備判断を強化。</td>
+        </tr>
+        <tr>
+          <td>逆風: パー</td>
+          <td>パーで負けると追加失点。</td>
+          <td>終盤の選択圧に効く。</td>
+        </tr>
+        <tr>
+          <td>チャレンジ</td>
+          <td>攻めを通したときに追加得点。</td>
+          <td>高リスク高リターン枠。</td>
+        </tr>
+        <tr>
+          <td>リベンジ</td>
+          <td>前ターンで負けた側が勝利で +2。</td>
+          <td>逆転チャンス。</td>
+        </tr>
+        <tr>
+          <td>クライマックス</td>
+          <td>15点到達以降、抽選で発動し +1。</td>
+          <td>シークレット効果として開示。</td>
+        </tr>
+      </table>
       <p class="mini" style="margin-top:0.6rem;">1ターンの追加ボーナス上限は +5。表示は「基本点 + ボーナス内訳 = 獲得点」で統一する。</p>
     </section>
 
@@ -310,13 +367,13 @@
         </tr>
       </table>
       <div class="link-row">
-        <a class="btn main" href="../week2/online.html">Week2 通信ルーム版を確認</a>
-        <a class="btn sub" href="../week2/index.html">Week2 紹介ページへ</a>
+        <a class="btn main" href="online.html">通信対戦で遊ぶ</a>
+        <a class="btn sub" href="test.html">CPU対戦（テスト）</a>
       </div>
     </section>
 
     <section class="note">
-      実装フェーズでは、GitHub Pagesをフロント配信として利用しつつ、マッチングと対戦同期は外部リアルタイム基盤で担当する構成を想定しています。
+      Firebase Realtime Databaseを利用したリアルタイム対戦を実装済み。ルームコード共有で即マッチングできます。
     </section>
   </main>
 
