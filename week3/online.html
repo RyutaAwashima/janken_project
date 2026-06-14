@@ -459,6 +459,8 @@
     let bestOf = 1;
     let currentTurn = 0;
     let mySubmitted = false;
+    let resolving = false;
+    let gameStarted = false;
     let unsubRoom = null;
     let unsubTurns = null;
     let pregenValues = [];
@@ -478,7 +480,9 @@
     }
     function validCfg(c) { return Object.values(c).every(v => !!v); }
     function loadCfg() {
+      // Try own key first, then fall back to week2 key
       try { const c = JSON.parse(localStorage.getItem(cfgKey)); if (c && validCfg(c)) return c; } catch(_){}
+      try { const c = JSON.parse(localStorage.getItem('janken-online-fb-config')); if (c && validCfg(c)) return c; } catch(_){}
       return null;
     }
     function fillCfg(c) {
@@ -502,12 +506,16 @@
       try {
         app = initializeApp(cfg, 'uj-' + Math.random().toString(36).slice(2,6));
         db = getDatabase(app);
-        $('cfg-status').textContent = '接続OK';
+        // Test connection by reading a dummy path
+        await get(ref(db, '_ping'));
+        $('cfg-status').textContent = '✅ 接続OK。ルームを作成または参加してください。';
         $('cfg-body').classList.add('hidden');
         $('cfg-toggle').textContent = '設定を開く';
         $('entry-section').classList.remove('hidden');
       } catch(e) {
-        $('cfg-status').textContent = '接続失敗: ' + e.message;
+        console.error('Firebase connect error:', e);
+        $('cfg-status').textContent = '❌ 接続失敗: ' + (e.message || String(e));
+        $('entry-section').classList.add('hidden');
       }
     }
 
@@ -557,33 +565,41 @@
     async function createRoom(bo) {
       displayName = $('display-name').value.trim() || 'Player';
       bestOf = bo;
-      let code = '';
-      for (let i = 0; i < 10; i++) {
-        code = randomCode();
-        const snap = await get(ref(db, `uj_rooms/${code}`));
-        if (!snap.exists()) break;
-      }
-      roomId = code;
-      mySlot = 'p1';
-      oppSlot = 'p2';
-      pregenValues = generateAllValues();
+      $('entry-status').textContent = 'ルーム作成中...';
 
-      await set(ref(db, `uj_rooms/${code}`), {
-        meta: { phase: 'lobby', bestOf: bo, turn: 0, suddenDeath: false, createdAt: Date.now() },
-        scores: { p1: 0, p2: 0 },
-        sets: { p1: 0, p2: 0 },
-        values: pregenValues,
-        players: {
-          p1: { uid, name: displayName, connected: true, lastSeen: Date.now() }
+      try {
+        let code = '';
+        for (let i = 0; i < 10; i++) {
+          code = randomCode();
+          const snap = await get(ref(db, `uj_rooms/${code}`));
+          if (!snap.exists()) break;
         }
-      });
+        roomId = code;
+        mySlot = 'p1';
+        oppSlot = 'p2';
+        pregenValues = generateAllValues();
 
-      // onDisconnect
-      const connRef = ref(db, `uj_rooms/${code}/players/p1/connected`);
-      onDisconnect(connRef).set(false);
+        await set(ref(db, `uj_rooms/${code}`), {
+          meta: { phase: 'lobby', bestOf: bo, turn: 0, suddenDeath: false, createdAt: Date.now() },
+          scores: { p1: 0, p2: 0 },
+          sets: { p1: 0, p2: 0 },
+          values: pregenValues,
+          players: {
+            p1: { uid, name: displayName, connected: true, lastSeen: Date.now() }
+          }
+        });
 
-      showLobby();
-      listenRoom();
+        // onDisconnect
+        const connRef = ref(db, `uj_rooms/${code}/players/p1/connected`);
+        onDisconnect(connRef).set(false);
+
+        $('entry-status').textContent = '';
+        showLobby();
+        listenRoom();
+      } catch(e) {
+        console.error('Create room error:', e);
+        $('entry-status').textContent = '❌ ルーム作成失敗: ' + (e.message || String(e));
+      }
     }
 
     $('create-bo1').onclick = () => createRoom(1);
@@ -594,27 +610,34 @@
       const code = $('join-code').value.trim().toUpperCase();
       if (code.length !== 6) { $('entry-status').textContent = '6文字のコードを入力'; return; }
       displayName = $('display-name').value.trim() || 'Player';
+      $('entry-status').textContent = '参加中...';
 
-      const snap = await get(ref(db, `uj_rooms/${code}`));
-      if (!snap.exists()) { $('entry-status').textContent = 'ルームが見つかりません'; return; }
+      try {
+        const snap = await get(ref(db, `uj_rooms/${code}`));
+        if (!snap.exists()) { $('entry-status').textContent = '❌ ルームが見つかりません'; return; }
 
-      const data = snap.val();
-      if (data.players?.p2) { $('entry-status').textContent = 'ルームが満員です'; return; }
+        const data = snap.val();
+        if (data.players?.p2) { $('entry-status').textContent = '❌ ルームが満員です'; return; }
 
-      roomId = code;
-      mySlot = 'p2';
-      oppSlot = 'p1';
-      bestOf = data.meta.bestOf;
-      pregenValues = data.values || [];
+        roomId = code;
+        mySlot = 'p2';
+        oppSlot = 'p1';
+        bestOf = data.meta.bestOf;
+        pregenValues = data.values || [];
 
-      await update(ref(db, `uj_rooms/${code}/players/p2`), { uid, name: displayName, connected: true, lastSeen: Date.now() });
-      await update(ref(db, `uj_rooms/${code}/meta`), { phase: 'ready' });
+        await update(ref(db, `uj_rooms/${code}/players/p2`), { uid, name: displayName, connected: true, lastSeen: Date.now() });
+        await update(ref(db, `uj_rooms/${code}/meta`), { phase: 'ready' });
 
-      const connRef = ref(db, `uj_rooms/${code}/players/p2/connected`);
-      onDisconnect(connRef).set(false);
+        const connRef = ref(db, `uj_rooms/${code}/players/p2/connected`);
+        onDisconnect(connRef).set(false);
 
-      showLobby();
-      listenRoom();
+        $('entry-status').textContent = '';
+        showLobby();
+        listenRoom();
+      } catch(e) {
+        console.error('Join room error:', e);
+        $('entry-status').textContent = '❌ 参加失敗: ' + (e.message || String(e));
+      }
     }
 
     $('join-room').onclick = joinRoom;
@@ -645,7 +668,13 @@
     }
 
     function buildInviteUrl() {
-      const base = `${location.origin}${location.pathname}`;
+      // For file:// protocol, use the full file path as-is
+      let base;
+      if (location.protocol === 'file:') {
+        base = location.href.split('?')[0];
+      } else {
+        base = `${location.origin}${location.pathname}`;
+      }
       const p = new URLSearchParams();
       if (roomId) p.set('room', roomId);
       const cfg = loadCfg();
@@ -708,7 +737,7 @@
       $('sc-label-me').textContent = displayName;
 
       // Phase transitions
-      if (meta.phase === 'ready' && lastPhase !== 'ready') {
+      if (meta.phase === 'ready' && lastPhase !== 'ready' && !gameStarted) {
         $('waiting-msg').innerHTML = '<div class="icon">🎮</div><div class="text">対戦相手が見つかりました！<br>3秒後に開始...</div>';
         setTimeout(() => startPlaying(), 2000);
       }
@@ -717,17 +746,27 @@
         // Already handled by startPlaying
       }
 
+      // Sync turn from DB (handles "next turn" sync between players)
+      if (meta.phase === 'playing' && meta.turn > currentTurn && gameStarted && !resolving) {
+        currentTurn = meta.turn;
+        mySubmitted = false;
+        if (meta.suddenDeath) {
+          showSuddenDeathTurn();
+        } else {
+          showTurn();
+        }
+      }
+
       // Check if opponent submitted on current turn
-      if (meta.phase === 'playing' && data.turns) {
+      if (meta.phase === 'playing' && data.turns && !resolving) {
         const turnData = data.turns[currentTurn];
-        if (turnData && turnData[mySlot] && turnData[oppSlot] && !document.querySelector('.result-panel.show')) {
-          // Both submitted - resolve
+        if (turnData && turnData[mySlot] && turnData[oppSlot]) {
           resolveResult(turnData, data);
         }
       }
 
-      // Score updates from outside (in case of race)
-      if (scores) {
+      // Score updates (only if not currently resolving to avoid flicker)
+      if (scores && !resolving) {
         $('score-me').textContent = scores[mySlot] || 0;
         $('score-opp').textContent = scores[oppSlot] || 0;
       }
@@ -741,10 +780,15 @@
 
     // === Start Playing ===
     async function startPlaying() {
+      if (gameStarted) return;
+      gameStarted = true;
       $('lobby-section').classList.add('hidden');
       $('game-area').classList.remove('hidden');
 
-      await update(ref(db, `uj_rooms/${roomId}/meta`), { phase: 'playing', turn: 1 });
+      // Only p1 writes the initial turn (avoid double-write)
+      if (mySlot === 'p1') {
+        await update(ref(db, `uj_rooms/${roomId}/meta`), { phase: 'playing', turn: 1 });
+      }
       currentTurn = 1;
       mySubmitted = false;
       showTurn();
@@ -829,6 +873,9 @@
 
     // === Resolve Result ===
     async function resolveResult(turnData, roomData) {
+      if (resolving) return;
+      resolving = true;
+
       $('wait-submit').classList.add('hidden');
       $('hand-section').classList.add('hidden');
 
@@ -934,6 +981,7 @@
         } else {
           $('next-btn').classList.remove('hidden');
         }
+        resolving = false;
       }, 1300);
     }
 
@@ -1014,11 +1062,12 @@
 
     // === Next Turn ===
     $('next-btn').onclick = async () => {
+      $('next-btn').classList.add('hidden');
       currentTurn++;
       mySubmitted = false;
+      // Write turn to DB so opponent syncs
       await update(ref(db, `uj_rooms/${roomId}/meta`), { turn: currentTurn });
 
-      // Check if in sudden death
       const snap = await get(ref(db, `uj_rooms/${roomId}/meta/suddenDeath`));
       if (snap.val()) {
         showSuddenDeathTurn();
