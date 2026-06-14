@@ -461,6 +461,7 @@
     let mySubmitted = false;
     let resolving = false;
     let gameStarted = false;
+    let resolvedTurns = new Set();
     let unsubRoom = null;
     let unsubTurns = null;
     let pregenValues = [];
@@ -758,9 +759,9 @@
       }
 
       // Check if opponent submitted on current turn
-      if (meta.phase === 'playing' && data.turns && !resolving) {
+      if (meta.phase === 'playing' && data.turns && !resolving && !resolvedTurns.has(currentTurn)) {
         const turnData = data.turns[currentTurn];
-        if (turnData && turnData[mySlot] && turnData[oppSlot]) {
+        if (turnData && turnData[mySlot] && turnData[oppSlot] && !turnData.result) {
           resolveResult(turnData, data);
         }
       }
@@ -858,11 +859,11 @@
 
       // Check if opponent already submitted
       const oppSnap = await get(ref(db, `uj_rooms/${roomId}/turns/${currentTurn}/${oppSlot}`));
-      if (oppSnap.exists()) {
+      if (oppSnap.exists() && !resolvedTurns.has(currentTurn)) {
         const fullSnap = await get(ref(db, `uj_rooms/${roomId}/turns/${currentTurn}`));
         const roomSnap = await get(ref(db, `uj_rooms/${roomId}`));
         resolveResult(fullSnap.val(), roomSnap.val());
-      } else {
+      } else if (!oppSnap.exists()) {
         $('wait-submit').classList.remove('hidden');
       }
     }
@@ -873,8 +874,9 @@
 
     // === Resolve Result ===
     async function resolveResult(turnData, roomData) {
-      if (resolving) return;
+      if (resolving || resolvedTurns.has(currentTurn)) return;
       resolving = true;
+      resolvedTurns.add(currentTurn);
 
       $('wait-submit').classList.add('hidden');
       $('hand-section').classList.add('hidden');
