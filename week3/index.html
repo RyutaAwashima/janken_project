@@ -249,8 +249,8 @@
   <header>
     <div class="head-wrap">
       <a class="back" href="../index.html">← トップへ戻る</a>
-      <h1>3週目: アルティメットじゃんけん（構想）</h1>
-      <p class="lead">じゃんけんに戦略・判断・心理戦を持ち込む競技版。ターンごとにレギュレーションが変化し、先に20ポイントへ到達したプレイヤーが勝者です。</p>
+      <h1>3週目: アルティメットじゃんけん</h1>
+      <p class="lead">毎ターン変わる「手の価値」で読み合いが生まれる、戦略じゃんけん。一瞬の判断が勝負を分ける。5点先取で決着。</p>
     </div>
   </header>
 
@@ -258,112 +258,107 @@
     <section class="card">
       <h2 class="sec-title">コンセプト</h2>
       <div class="flow">
-        <p>1. 通常のじゃんけんで勝敗を決め、得点を積み上げる。</p>
-        <p>2. 毎ターンのレギュレーションで読み合いを発生させる。</p>
-        <p>3. 高得点を狙うか、失点回避を優先するかを選ぶ。</p>
+        <p>1. 毎ターン、グー・チョキ・パーに 1〜3 の価値がランダムに割り振られる。</p>
+        <p>2. 勝てば「自分が出した手の価値」が得点になる。</p>
+        <p>3. あいこなら両者にその手の価値が加算される。</p>
       </div>
-      <p class="mini" style="margin-top:0.55rem;">ゴールは運だけでなく、期待値の判断と相手の心理を読むこと。</p>
+      <p class="mini" style="margin-top:0.55rem;">数字を見て一瞬で判断。高い手を狙うか、安全な手で削るか。相手の思考を読め。</p>
     </section>
 
     <section class="card">
-      <h2 class="sec-title">確定レギュレーション</h2>
+      <h2 class="sec-title">ルール</h2>
       <div class="rule-grid">
+        <article class="rule">
+          <span class="pill">VALUE SYSTEM</span>
+          <h3>手の価値</h3>
+          <ul>
+            <li>毎ターン [1, 2, 3] をランダムに各手へ割り当て</li>
+            <li>割り当ては両プレイヤー共通・公開情報</li>
+            <li>6パターンの組み合わせが均等に出現</li>
+          </ul>
+        </article>
+
+        <article class="rule">
+          <span class="pill">SCORING</span>
+          <h3>得点ルール</h3>
+          <ul>
+            <li>勝ち: 自分の手の価値が自分に加点</li>
+            <li>あいこ: 両者にその手の価値が加点</li>
+            <li>負け: 0点（相手に勝利点が入る）</li>
+          </ul>
+        </article>
+
         <article class="rule">
           <span class="pill">WIN CONDITION</span>
           <h3>勝利条件</h3>
           <ul>
-            <li>先に20ポイントへ到達した側の勝利。</li>
-            <li>同ターンで両者20以上の場合は高得点側が勝利。</li>
-            <li>同点ならサドンデス1本で決着。</li>
+            <li>5点先取でセット勝利</li>
+            <li>同時到達ならサドンデス（普通のじゃんけん）</li>
+            <li>BO1（インスタント）/ BO3（しっかり勝負）選択可</li>
           </ul>
         </article>
 
         <article class="rule">
-          <span class="pill">BASE POINT</span>
-          <h3>通常得点</h3>
+          <span class="pill">STRATEGY</span>
+          <h3>読み合いの構造</h3>
           <ul>
-            <li>勝ち: 2点</li>
-            <li>あいこ: 1点</li>
-            <li>負け: 0点</li>
+            <li>価値3の手: 高リターンだが負けると相手に2点渡す</li>
+            <li>価値2の手: 中間リターン、負けても被害1点</li>
+            <li>価値1の手: 勝っても+1だけ、割に合わない</li>
           </ul>
         </article>
       </div>
-
-      <span class="pill" style="margin-top:0.7rem;">REGULATION CARDS</span>
-      <h3 style="font-size:0.95rem; margin-bottom:0.35rem; color:#7c2d12;">採用カード一覧（9種）</h3>
-      <table class="card-table">
-        <tr>
-          <th>カード名</th>
-          <th>効果</th>
-          <th>メモ</th>
-        </tr>
-        <tr>
-          <td>ボーナスハンド: グー</td>
-          <td>グーで勝利したら追加得点。</td>
-          <td>読み合いを作る主軸。</td>
-        </tr>
-        <tr>
-          <td>ボーナスハンド: チョキ</td>
-          <td>チョキで勝利したら追加得点。</td>
-          <td>手を偏らせる圧力。</td>
-        </tr>
-        <tr>
-          <td>ボーナスハンド: パー</td>
-          <td>パーで勝利したら追加得点。</td>
-          <td>逆読みを誘発。</td>
-        </tr>
-        <tr>
-          <td>逆風: グー</td>
-          <td>グーで負けると追加失点。</td>
-          <td>リスク管理用カード。</td>
-        </tr>
-        <tr>
-          <td>逆風: チョキ</td>
-          <td>チョキで負けると追加失点。</td>
-          <td>守備判断を強化。</td>
-        </tr>
-        <tr>
-          <td>逆風: パー</td>
-          <td>パーで負けると追加失点。</td>
-          <td>終盤の選択圧に効く。</td>
-        </tr>
-        <tr>
-          <td>チャレンジ</td>
-          <td>攻めを通したときに追加得点。</td>
-          <td>高リスク高リターン枠。</td>
-        </tr>
-        <tr>
-          <td>リベンジ</td>
-          <td>前ターンで負けた側が勝利で +2。</td>
-          <td>逆転チャンス。</td>
-        </tr>
-        <tr>
-          <td>クライマックス</td>
-          <td>15点到達以降、抽選で発動し +1。</td>
-          <td>シークレット効果として開示。</td>
-        </tr>
-      </table>
-      <p class="mini" style="margin-top:0.6rem;">1ターンの追加ボーナス上限は +5。表示は「基本点 + ボーナス内訳 = 獲得点」で統一する。</p>
     </section>
 
     <section class="card">
-      <h2 class="sec-title">通信対戦の実装方針</h2>
+      <h2 class="sec-title">例: グー=1, チョキ=2, パー=3 の場合</h2>
+      <table class="card-table">
+        <tr>
+          <th>出し手</th>
+          <th>勝てば</th>
+          <th>負ければ（相手に渡る点）</th>
+          <th>あいこ</th>
+        </tr>
+        <tr>
+          <td>✊ グー (1)</td>
+          <td>+1</td>
+          <td>相手に ✋パー(3)</td>
+          <td>両者+1</td>
+        </tr>
+        <tr>
+          <td>✌️ チョキ (2)</td>
+          <td>+2</td>
+          <td>相手に ✊グー(1)</td>
+          <td>両者+2</td>
+        </tr>
+        <tr>
+          <td>✋ パー (3)</td>
+          <td>+3</td>
+          <td>相手に ✌️チョキ(2)</td>
+          <td>両者+3</td>
+        </tr>
+      </table>
+      <p class="mini" style="margin-top:0.6rem;">→ チョキが「安全な高得点手」。だが両者チョキ読みで+2ずつ積み上がる。裏をかいてパーを出すか？</p>
+    </section>
+
+    <section class="card">
+      <h2 class="sec-title">通信対戦</h2>
       <table class="matrix">
         <tr>
           <th>対戦モデル</th>
-          <td>Week2と同じ通信対戦UIを継承。ルーム作成、参加、同期表示の流れで実装する。</td>
+          <td>Firebase Realtime Databaseによるリアルタイム1:1対戦。ルームコード6桁で即マッチング。</td>
         </tr>
         <tr>
           <th>マッチング</th>
-          <td>待機キューから2人を自動でペアにし、対戦ルームを生成する。</td>
+          <td>ルーム作成 → コード/QR/URL共有 → 相手が参加 → 自動開始。</td>
         </tr>
         <tr>
-          <th>同期内容</th>
-          <td>手の提出、レギュレーション状態、得点、勝敗ログをリアルタイムで共有する。</td>
+          <th>公平性</th>
+          <td>ターンごとの数値割り当てはルーム作成時に全30ターン分を事前生成。両者同一。</td>
         </tr>
         <tr>
           <th>進行管理</th>
-          <td>ホスト端末依存なし。状態遷移を共通ルールで管理して切断時も再接続できるようにする。</td>
+          <td>ホストレス設計。両者提出完了で自動解決。切断時はconnectedフラグで検知。</td>
         </tr>
       </table>
       <div class="link-row">
@@ -373,10 +368,10 @@
     </section>
 
     <section class="note">
-      Firebase Realtime Databaseを利用したリアルタイム対戦を実装済み。ルームコード共有で即マッチングできます。
+      3〜4ターンで決着する高速じゃんけん。数字を見て一瞬で判断する直感力と、相手の心理を読む戦略力が問われます。
     </section>
   </main>
 
-  <footer>じゃんけんプロジェクト / Week 3 Planning</footer>
+  <footer>じゃんけんプロジェクト / Week 3</footer>
 </body>
 </html>
