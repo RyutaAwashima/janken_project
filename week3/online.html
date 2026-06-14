@@ -235,6 +235,30 @@
     .conn-dot { width: 8px; height: 8px; border-radius: 50%; }
     .conn-dot.on { background: var(--green); }
     .conn-dot.off { background: var(--p2); }
+
+    /* QR Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; z-index: 200;
+    }
+    .modal {
+      width: min(440px, 100%);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+    .modal-head .title { font-size: 0.95rem; font-weight: 800; color: var(--accent); margin: 0; }
+    .qr-wrap { display: flex; justify-content: center; margin: 0.7rem 0; }
+    .qr-wrap img { width: min(280px, 70vw); height: auto; border-radius: 10px; background: #fff; padding: 8px; }
+    .url-box {
+      width: 100%; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.5rem; font-size: 0.72rem; color: var(--muted);
+      white-space: nowrap; overflow-x: auto; background: rgba(0,0,0,0.3);
+    }
+    .share-btns { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
   </style>
 </head>
 <body>
@@ -306,7 +330,27 @@
         <div class="icon">⏳</div>
         <div class="text">対戦相手を待っています...<br>ルームコードを相手に共有してください</div>
       </div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn-accent" id="show-qr">QRで招待</button>
+        <button class="btn-outline" id="copy-link">URLコピー</button>
+      </div>
       <div class="status" id="lobby-status"></div>
+    </div>
+
+    <!-- QR Modal -->
+    <div class="modal-backdrop hidden" id="qr-modal">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="title">招待QR</div>
+          <button class="btn-danger" id="close-qr" style="font-size:0.78rem;padding:0.35rem 0.7rem;">閉じる</button>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Firebase設定 + ルームコードが含まれています。相手のカメラで読み取ってもらえばOK。</div>
+        <div class="qr-wrap"><img id="qr-img" alt="QR" /></div>
+        <div class="url-box mono" id="qr-url"></div>
+        <div class="share-btns">
+          <button class="btn-pri" id="copy-qr-url">URLをコピー</button>
+        </div>
+      </div>
     </div>
 
     <!-- Game Area -->
@@ -591,6 +635,45 @@
         if (mySlot === 'p1') await remove(ref(db, `uj_rooms/${roomId}`));
       }
       location.reload();
+    };
+
+    // === QR / Invite URL ===
+    function toBase64Url(str) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+
+    function buildInviteUrl() {
+      const base = `${location.origin}${location.pathname}`;
+      const p = new URLSearchParams();
+      if (roomId) p.set('room', roomId);
+      const cfg = loadCfg();
+      if (cfg) p.set('cfg', toBase64Url(JSON.stringify(cfg)));
+      return `${base}?${p.toString()}`;
+    }
+
+    $('show-qr').onclick = () => {
+      if (!roomId) return;
+      const url = buildInviteUrl();
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}`;
+      $('qr-img').src = qrSrc;
+      $('qr-url').textContent = url;
+      $('qr-modal').classList.remove('hidden');
+    };
+
+    $('close-qr').onclick = () => $('qr-modal').classList.add('hidden');
+
+    $('copy-link').onclick = async () => {
+      const url = buildInviteUrl();
+      try { await navigator.clipboard.writeText(url); $('lobby-status').textContent = 'URLをコピーしました'; }
+      catch(_) { $('lobby-status').textContent = 'コピー失敗'; }
+    };
+
+    $('copy-qr-url').onclick = async () => {
+      const url = $('qr-url').textContent;
+      try { await navigator.clipboard.writeText(url); $('lobby-status').textContent = 'URLをコピーしました'; }
+      catch(_) {}
     };
 
     // === Listen Room ===
