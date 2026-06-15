@@ -458,6 +458,7 @@
     let oppSlot = null;
     let bestOf = 1;
     let currentTurn = 0;
+    let localSet = 1;
     let mySubmitted = false;
     let resolving = false;
     let gameStarted = false;
@@ -581,7 +582,7 @@
         pregenValues = generateAllValues();
 
         await set(ref(db, `uj_rooms/${code}`), {
-          meta: { phase: 'lobby', bestOf: bo, turn: 0, suddenDeath: false, createdAt: Date.now() },
+          meta: { phase: 'lobby', bestOf: bo, turn: 0, currentSet: 1, suddenDeath: false, createdAt: Date.now() },
           scores: { p1: 0, p2: 0 },
           sets: { p1: 0, p2: 0 },
           values: pregenValues,
@@ -728,6 +729,7 @@
         // Opponent triggered rematch - reset local state
         resolvedTurns.clear();
         currentTurn = 1;
+        localSet = 1;
         mySubmitted = false;
         pregenValues = data.values || [];
         $('match-over').classList.remove('show');
@@ -764,6 +766,21 @@
 
       if (meta.phase === 'playing' && lastPhase !== 'playing') {
         // Already handled by startPlaying
+      }
+
+      // Detect next-set transition (either player pressed "次のセットへ")
+      if (meta.phase === 'playing' && meta.currentSet && meta.currentSet > localSet && gameStarted && !resolving) {
+        localSet = meta.currentSet;
+        currentTurn = meta.turn;
+        mySubmitted = false;
+        resolvedTurns.clear();
+        $('set-over').classList.remove('show');
+        $('history-list').innerHTML = '';
+        $('score-me').textContent = '0';
+        $('score-opp').textContent = '0';
+        showTurn();
+        lastPhase = meta.phase;
+        return;
       }
 
       // Sync turn from DB (handles "next turn" sync between players)
@@ -1033,16 +1050,10 @@
     }
 
     $('so-btn').onclick = async () => {
-      $('set-over').classList.remove('show');
-      $('history-list').innerHTML = '';
-      // Reset scores for new set
+      // Write next-set signal to DB; both players detect via handleRoomUpdate
+      const nextSet = localSet + 1;
       await update(ref(db, `uj_rooms/${roomId}/scores`), { p1: 0, p2: 0 });
-      await update(ref(db, `uj_rooms/${roomId}/meta`), { suddenDeath: false, turn: currentTurn + 1 });
-      currentTurn++;
-      mySubmitted = false;
-      $('score-me').textContent = '0';
-      $('score-opp').textContent = '0';
-      showTurn();
+      await update(ref(db, `uj_rooms/${roomId}/meta`), { suddenDeath: false, turn: currentTurn + 1, currentSet: nextSet });
     };
 
     function showMatchOver(iWon) {
@@ -1070,7 +1081,7 @@
       resolvedTurns.clear();
       // Use set() to fully overwrite (update won't delete turns)
       const roomData = {
-        meta: { phase: 'playing', bestOf, turn: 1, suddenDeath: false, createdAt: Date.now() },
+        meta: { phase: 'playing', bestOf, turn: 1, currentSet: 1, suddenDeath: false, createdAt: Date.now() },
         scores: { p1: 0, p2: 0 },
         sets: { p1: 0, p2: 0 },
         values: pregenValues,
@@ -1081,6 +1092,7 @@
       if (pSnap.exists()) roomData.players = pSnap.val();
       await set(ref(db, `uj_rooms/${roomId}`), roomData);
       currentTurn = 1;
+      localSet = 1;
       mySubmitted = false;
       $('score-me').textContent = '0';
       $('score-opp').textContent = '0';
