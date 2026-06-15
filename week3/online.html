@@ -723,6 +723,25 @@
     function handleRoomUpdate(data) {
       const { meta, players, scores, sets } = data;
 
+      // Detect rematch: phase went from 'finished' to 'playing' with turn=1
+      if (lastPhase === 'finished' && meta.phase === 'playing' && meta.turn === 1) {
+        // Opponent triggered rematch - reset local state
+        resolvedTurns.clear();
+        currentTurn = 1;
+        mySubmitted = false;
+        pregenValues = data.values || [];
+        $('match-over').classList.remove('show');
+        $('set-over').classList.remove('show');
+        $('history-list').innerHTML = '';
+        $('score-me').textContent = '0';
+        $('score-opp').textContent = '0';
+        $('game-area').classList.remove('hidden');
+        $('lobby-section').classList.add('hidden');
+        showTurn();
+        lastPhase = meta.phase;
+        return;
+      }
+
       // Update opponent info
       const opp = players?.[oppSlot];
       if (opp) {
@@ -1048,13 +1067,19 @@
       $('match-over').classList.remove('show');
       $('history-list').innerHTML = '';
       pregenValues = generateAllValues();
-      await update(ref(db, `uj_rooms/${roomId}`), {
+      resolvedTurns.clear();
+      // Use set() to fully overwrite (update won't delete turns)
+      const roomData = {
         meta: { phase: 'playing', bestOf, turn: 1, suddenDeath: false, createdAt: Date.now() },
         scores: { p1: 0, p2: 0 },
         sets: { p1: 0, p2: 0 },
         values: pregenValues,
-        turns: null,
-      });
+        players: {}
+      };
+      // Preserve player info
+      const pSnap = await get(ref(db, `uj_rooms/${roomId}/players`));
+      if (pSnap.exists()) roomData.players = pSnap.val();
+      await set(ref(db, `uj_rooms/${roomId}`), roomData);
       currentTurn = 1;
       mySubmitted = false;
       $('score-me').textContent = '0';
